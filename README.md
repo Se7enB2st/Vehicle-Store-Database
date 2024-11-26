@@ -10,6 +10,8 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 
 
 ### E-R Model
+![ER diagram](https://github.com/user-attachments/assets/dc106c31-cca6-4d01-b3e8-7b0cc3bb5746)
+
 
 
 
@@ -37,6 +39,10 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 | Payment       | Contract       | 1                                | m                                | Our system allows each payment to be used by multiple contracts. But a contract can only have one payment. |
 | PaymentMethod | Payment        | 1                                | m                                | Our system allows each payment method to be used by multiple payments. But a payment can only have one payment method. |
 
+
+### DDL Statment
+![DDL Statement 1](https://github.com/user-attachments/assets/671fd6ed-a52e-4172-9ad3-8ce91fc8cf8c)
+![DDL Statement 2](https://github.com/user-attachments/assets/e07cf6dc-fd8a-433e-8eb5-84784b999737)
 
 
 ### Additional Notes
