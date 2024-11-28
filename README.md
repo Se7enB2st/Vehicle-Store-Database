@@ -49,17 +49,17 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 The <form> element is used to connect the front-end to the back-end, specifying the destination path and method via action and method.
 
 ### Front-end and Back-end Interactions
-## Basic elements:
-# Flask backend logic routing
+### Basic elements:
+### Flask backend logic routing
 Flask's @app.route defines the backend logic that receives, processes, and returns request results.
 
-# Template engine (Jinja2):
+### Template engine (Jinja2):
 Flask's render_template dynamically renders HTML pages, passing in variables such as error_message.
 
-# Flask redirect function
+### Flask redirect function
 Use Flask's redirect function to realize the page jump.
 
-# How it works:
+### How it works:
 When a user accesses the system's page, the Flask backend processes the request through routing and returns the HTML page to the user's browser using render_template, containing form elements (such as input boxes, checkboxes, buttons, etc.).
 
 Once the user sees the page in their browser, they submit the form information by filling out the form and clicking the submit button. After the original form element defined in the html to realize the interaction with the request.form in the route of flask.
