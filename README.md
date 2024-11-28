@@ -46,7 +46,7 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 ![DDL Statement 2](https://github.com/user-attachments/assets/e07cf6dc-fd8a-433e-8eb5-84784b999737)
 
 ### Front-end Design
-The <form> element is used to connect the front-end to the back-end, specifying the destination path and method via action and method.
+The "<form>" element is used to connect the front-end to the back-end, specifying the destination path and method via action and method.
 
 ### Front-end and Back-end Interactions
 
