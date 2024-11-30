@@ -82,7 +82,8 @@ If the validation is successful, the backend stores the user's login status in t
 
 If username or password validation fails, the backend will re-render the login page via render_template with an error message indicating that the username or password entered by the user is invalid. The user can then re-fill the form according to the error message and submit again.
 
-###Demo
+### Demo
+![Image Description](images/demo_1.png)
 
 
 
