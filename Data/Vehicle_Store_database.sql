@@ -1,304 +1,106 @@
-USE accomodation_database;
-
-# Drop
-DROP TABLE IF EXISTS PaymentUsePaymentMethod;
-DROP TABLE IF EXISTS PaymentOfContract;
-DROP TABLE IF EXISTS Contract;
+-- Drop Tables if they already exist
 DROP TABLE IF EXISTS Review;
+DROP TABLE IF EXISTS Booking;
+DROP TABLE IF EXISTS Contract;
 DROP TABLE IF EXISTS Payment;
-DROP TABLE IF EXISTS PaymentMethod;
-DROP TABLE IF EXISTS VehicleLocateAddress;
-DROP TABLE IF EXISTS ZipCodeOfAddress;
-DROP TABLE IF EXISTS AddressLocateCity;
-DROP TABLE IF EXISTS CityLocateState;
-DROP TABLE IF EXISTS ZipCode;
-DROP TABLE IF EXISTS Address;
-DROP TABLE IF EXISTS City;
-DROP TABLE IF EXISTS State;
 DROP TABLE IF EXISTS VehicleInfo;
-DROP TABLE IF EXISTS UserUsePassword;
-DROP TABLE IF EXISTS UserIsUserType;
-DROP TABLE IF EXISTS Password;
-DROP TABLE IF EXISTS UserType;
-
-DROP TABLE IF EXISTS Appointments;
-DROP TABLE IF EXISTS Images;
-DROP TABLE IF EXISTS MarketListings;
-DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS Vehicle;
+DROP TABLE IF EXISTS User;
+DROP TABLE IF EXISTS PaymentMethod;
+DROP TABLE IF EXISTS Address;
+DROP TABLE IF EXISTS ZipCode;
 
-
-# Create
-CREATE TABLE IF NOT EXISTS Payment(
-	payment_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    payment_date DATETIME NOT NULL,
-    amount DOUBLE NOT NULL
-)ENGINE = InnoDB;
-
-CREATE TABLE IF NOT EXISTS PaymentMethod(
-	method_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    method_type VARCHAR(30) NOT NULL
-)ENGINE = InnoDB;
-
+-- User Table
 CREATE TABLE User (
-	user_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    f_name VARCHAR(30) NOT NULL,
-    l_name VARCHAR(30) NOT NULL
-) ENGINE=InnoDB;
-
-CREATE TABLE UserType (
-    type_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    type_name VARCHAR(30) NOT NULL
-) ENGINE=InnoDB;
-
-CREATE TABLE Password (
-    password_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE, -- Ensure usernames are unique
     password VARCHAR(255) NOT NULL
-) ENGINE=InnoDB;
+);
 
+-- Vehicle Table
 CREATE TABLE Vehicle (
-    vehicle_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    description VARCHAR(255) NOT NULL
-) ENGINE=InnoDB;
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE -- Cascade delete to clean up associated vehicles when a user is deleted
+);
 
-CREATE TABLE IF NOT EXISTS ZipCode(
-	zipcode_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    number VARCHAR(20) NOT NULL
-)ENGINE = InnoDB;
-
-CREATE TABLE IF NOT EXISTS Address(
-	address_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    line1 VARCHAR(255) NOT NULL,
-    line2 VARCHAR(255)
-)ENGINE = InnoDB;
-
-CREATE TABLE IF NOT EXISTS City(
-	city_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    city_name VARCHAR(20) NOT NULL
-)ENGINE = InnoDB;
-
-CREATE TABLE IF NOT EXISTS State(
-	state_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    state_name VARCHAR(20) NOT NULL,
-    short_name VARCHAR(10)
-)ENGINE = InnoDB;
-
-CREATE TABLE UserIsUserType (
-    user_id INT,
-    type_id INT,
-    PRIMARY KEY (user_id, type_id),
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES User(user_id),
-    CONSTRAINT fk_type_id FOREIGN KEY (type_id) REFERENCES UserType(type_id)
-) ENGINE=InnoDB;
-
-CREATE TABLE UserUsePassword (
-    user_id INT UNIQUE,
-    password_id INT,
-    PRIMARY KEY (user_id, password_id),
-    CONSTRAINT fk_user_id1 FOREIGN KEY (user_id) REFERENCES User(user_id),
-    CONSTRAINT fk_password_id1 FOREIGN KEY (password_id) REFERENCES Password(password_id)
-) ENGINE=InnoDB;
-
-
-
+-- VehicleInfo Table
 CREATE TABLE VehicleInfo (
-	Vehicle_info_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    year_made YEAR NOT NULL,
-    color VARCHAR(50) NOT NULL,
+    vehicleinfo_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    year INT NOT NULL CHECK (year >= 1886), -- Ensures year is valid (1886 is the year of the first car)
+    make VARCHAR(50) NOT NULL,
     model VARCHAR(50) NOT NULL,
-    brand VARCHAR(50) NOT NULL,
-    vehicle_id INT UNIQUE,
-    CONSTRAINT fk_vehicle_id FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id)
-) ENGINE=InnoDB;
-
-
-
--- MarketListings table
-CREATE TABLE MarketListings (
-    listing_id INT NOT NULL AUTO_INCREMENT,
-    vehicle_id INT NOT NULL,
+    vin VARCHAR(17) NOT NULL UNIQUE, -- VIN should be unique
+    color VARCHAR(50) NOT NULL,
     listing_date DATE NOT NULL,
-    listing_price DECIMAL(10,2) NOT NULL,
-    status VARCHAR(255) NOT NULL,
-    PRIMARY KEY (listing_id),
-    CONSTRAINT fk_MarketListings_Property
-        FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id)
+    listing_price DECIMAL(10, 2) NOT NULL, -- Specify precision for decimals
+    status VARCHAR(20) NOT NULL CHECK (status IN ('Available', 'Sold', 'Pending')), -- Limit valid status values
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id) ON DELETE CASCADE -- Ensure vehicle details are cleaned up if the vehicle is deleted
 );
 
--- Images table
-CREATE TABLE Images (
-    image_id INT NOT NULL AUTO_INCREMENT,
+-- Review Table
+CREATE TABLE Review (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     vehicle_id INT NOT NULL,
-    image_url VARCHAR(255) NOT NULL,
-    PRIMARY KEY (image_id),
-    CONSTRAINT fk_Images_Vehicle
-        FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id)
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5), -- Rating should be between 1 and 5
+    comments VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE, -- Cleanup reviews if user is deleted
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id) ON DELETE CASCADE -- Cleanup reviews if vehicle is deleted
 );
--- Appointments table
-CREATE TABLE Bookings (
-    booking_id INT NOT NULL AUTO_INCREMENT,
+
+-- Booking Table
+CREATE TABLE Booking (
+    booking_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     vehicle_id INT NOT NULL,
-    initiator_user_id INT NOT NULL,
-    receiver_user_id INT NOT NULL,
-    booking_time DATE NOT NULL,
-    status VARCHAR(255) NOT NULL,
-    PRIMARY KEY (booking_id),
-    CONSTRAINT fk_Bookings_Vehicle
-        FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id),
-    CONSTRAINT fk_Bookings_InitiatorUser
-        FOREIGN KEY (initiator_user_id) REFERENCES User(user_id),
-    CONSTRAINT fk_Bookings_ReceiverUser
-        FOREIGN KEY (receiver_user_id) REFERENCES User(user_id)
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE, -- Cleanup bookings if user is deleted
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id) ON DELETE CASCADE -- Cleanup bookings if vehicle is deleted
 );
 
-CREATE TABLE IF NOT EXISTS Contract(
-	contract_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    signing_date DATETIME NOT NULL,
-    contract_price DOUBLE NOT NULL,
-    fk_first_party INT NOT NULL,
-    fk_second_party INT NOT NULL,
-    fk_vehicle_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE Contract
-ADD CONSTRAINT
-FOREIGN KEY(fk_first_party)
-REFERENCES User(user_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_second_party)
-REFERENCES User(user_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_property_id)
-REFERENCES Property(property_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
+-- Contract Table
+CREATE TABLE Contract (
+    contract_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    vehicle_id INT NOT NULL,
+    signing_date DATE NOT NULL,
+    contract_price DECIMAL(10, 2) NOT NULL, -- Specify precision for decimals
+    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE, -- Cleanup contracts if user is deleted
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id) ON DELETE CASCADE -- Cleanup contracts if vehicle is deleted
+);
 
-CREATE TABLE IF NOT EXISTS Review(
-	review_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    rating INT NOT NULL,
-    comments VARCHAR(255) NOT NULL,
-    fk_user_id INT NOT NULL,
-    fk_vehicle_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE Review
-ADD CONSTRAINT
-FOREIGN KEY(fk_user_id)
-REFERENCES User(user_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_vehicle_id)
-REFERENCES Vehicle(vehicle_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
+-- PaymentMethod Table
+CREATE TABLE PaymentMethod (
+    payment_method_id INT AUTO_INCREMENT PRIMARY KEY,
+    method VARCHAR(50) NOT NULL UNIQUE -- Payment method names should be unique
+);
 
+-- Payment Table
+CREATE TABLE Payment (
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    contract_id INT NOT NULL,
+    payment_method_id INT NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL, -- Specify precision for decimals
+    payment_date DATE NOT NULL,
+    FOREIGN KEY (contract_id) REFERENCES Contract(contract_id) ON DELETE CASCADE, -- Cleanup payments if contract is deleted
+    FOREIGN KEY (payment_method_id) REFERENCES PaymentMethod(payment_method_id)
+);
 
-CREATE TABLE IF NOT EXISTS PaymentUsePaymentMethod(
-	fk_payment_id INT NOT NULL,
-    fk_method_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE PaymentUsePaymentMethod
-ADD CONSTRAINT
-FOREIGN KEY(fk_payment_id)
-REFERENCES Payment(payment_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_method_id)
-REFERENCES PaymentMethod(method_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
+-- ZipCode Table
+CREATE TABLE ZipCode (
+    zipcode_id INT AUTO_INCREMENT PRIMARY KEY,
+    zipcode VARCHAR(10) NOT NULL UNIQUE -- Ensure zip codes are unique
+);
 
-CREATE TABLE IF NOT EXISTS PaymentOfContract(
-	fk_payment_id INT NOT NULL,
-    fk_contract_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE PaymentOfContract
-ADD CONSTRAINT
-FOREIGN KEY(fk_payment_id)
-REFERENCES Payment(payment_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_contract_id)
-REFERENCES Contract(contract_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-
-CREATE TABLE IF NOT EXISTS VehicleLocateAddress(
-	fk_vehicle_id INT NOT NULL,
-    fk_address_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE VehicleLocateAddress
-ADD CONSTRAINT
-FOREIGN KEY(fk_vehicle_id)
-REFERENCES Vehicle(vehicle_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_address_id)
-REFERENCES Address(address_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-
-CREATE TABLE IF NOT EXISTS ZipCodeOfAddress(
-	fk_zipcode_id INT NOT NULL,
-    fk_address_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE ZipCodeOfAddress
-ADD CONSTRAINT
-FOREIGN KEY(fk_zipcode_id)
-REFERENCES ZipCode(zipcode_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_address_id)
-REFERENCES Address(address_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-
-CREATE TABLE IF NOT EXISTS AddressLocateCity(
-	fk_address_id INT NOT NULL,
-    fk_city_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE AddressLocateCity
-ADD CONSTRAINT
-FOREIGN KEY(fk_address_id)
-REFERENCES Address(address_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_city_id)
-REFERENCES City(city_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-
-
-CREATE TABLE IF NOT EXISTS CityLocateState(
-	fk_city_id INT NOT NULL,
-    fk_state_id INT NOT NULL
-)ENGINE = InnoDB;
-# Add Constraint
-ALTER TABLE CityLocateState
-ADD CONSTRAINT
-FOREIGN KEY(fk_city_id)
-REFERENCES City(city_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE,
-ADD CONSTRAINT
-FOREIGN KEY(fk_state_id)
-REFERENCES State(state_id)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-
-
+-- Address Table
+CREATE TABLE Address (
+    address_id INT AUTO_INCREMENT PRIMARY KEY,
+    street VARCHAR(100) NOT NULL,
+    city VARCHAR(50) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    zipcode_id INT NOT NULL,
+    FOREIGN KEY (zipcode_id) REFERENCES ZipCode(zipcode_id) ON DELETE CASCADE -- Cleanup addresses if zipcode is deleted
+);
