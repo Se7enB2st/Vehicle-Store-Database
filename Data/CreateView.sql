@@ -1,38 +1,53 @@
 CREATE VIEW UserVehicleInfo AS
 SELECT 
     u.user_id,
-    u.f_name,
-    u.l_name,
+    u.username,
     v.vehicle_id,
-    v.description,
-    vi.year_made,
+    vi.year AS year_made,
+    vi.make AS brand,
     vi.model,
-    vi.brand,
-    vi.color
+    vi.color,
+    vi.listing_price,
+    vi.status
 FROM 
     User u
 JOIN 
-    Vehicle v ON u.user_id = v.vehicle_id
+    Vehicle v ON u.user_id = v.user_id
 JOIN 
-    Vehicleinfo vi ON v.vehicle_id = vi.vehicle_id;
+    VehicleInfo vi ON v.vehicle_id = vi.vehicle_id;
 CREATE VIEW VehicleMarketListings AS
 SELECT 
     v.vehicle_id,
-    v.description,
-    ml.listing_id,
-    ml.listing_date,
-    ml.listing_price,
-    ml.status
+    vi.year AS year_made,
+    vi.make AS brand,
+    vi.model,
+    vi.color,
+    vi.listing_price,
+    vi.status
 FROM 
     Vehicle v
 JOIN 
-    MarketListings ml ON v.vehicle_id = ml.vehicle_id;
-
+    VehicleInfo vi ON v.vehicle_id = vi.vehicle_id;
 DROP VIEW IF EXISTS VehicleInfo;
+
 CREATE VIEW VehicleInfo AS
-SELECT v.vehicle_id, v.description, year_made, brand, model, color, c.city_name FROM Vehicle v
-JOIN VehicleLocateAddress vla ON v.vehicle_id = vla.fk_vehicle_id
-JOIN Address a ON vla.fk_address_id = a.address_id
-JOIN AddressLocateCity alc ON a.address_id = alc.fk_address_id
-JOIN City c ON alc.fk_city_id = c.city_id
-JOIN Vehicleinfo vi ON v.vehicle_id = vi.vehicle_id;
+SELECT 
+    v.vehicle_id,
+    vi.year AS year_made,
+    vi.make AS brand,
+    vi.model,
+    vi.color,
+    vi.listing_price,
+    vi.status,
+    a.street AS address_street,
+    a.city AS address_city,
+    a.state AS address_state,
+    z.zipcode AS address_zipcode
+FROM 
+    Vehicle v
+JOIN 
+    VehicleInfo vi ON v.vehicle_id = vi.vehicle_id
+JOIN 
+    Address a ON v.vehicle_id = a.address_id -- Assuming Address is linked directly to vehicles
+JOIN 
+    ZipCode z ON a.zipcode_id = z.zipcode_id;
