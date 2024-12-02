@@ -5,14 +5,14 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 
 - Ethan He (eth69@pitt.edu)
 - Pengyao Li (pel131@pitt.edu)
-- Li Xinyu (xil520@pitt.edu)
+- Xinyu Li (xil520@pitt.edu)
 
 **Instructor: Vladimir Zadorozhny**
 
 ### Introduction/Abstract
 
-- Simplifying vehicle search and management for renters and buyers. Explore, list, and analyze vehicle sale and rental listings with ease. 
-- By providing a comprehensive and user-friendly platform, we empower users to effortlessly navigate the often complex and time-consuming process of finding and managing vehicle listings. Whether it's assisting renters in finding their dream vehicle or helping buyers identify their future vehicle, our app streamlines the entire journey. 
+- Streamlining vehicle search and management for renters and buyers. Effortlessly explore, list, and evaluate vehicle sale and rental options.
+- Our platform provides a seamless, user-friendly experience, enabling users to navigate the complexities of vehicle searches with ease. Whether aiding renters in finding the perfect ride or guiding buyers to their ideal purchase, the app simplifies the entire process from start to finish. 
 
 
 
