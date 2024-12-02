@@ -1,6 +1,13 @@
 # Vehicle-Store-Database
 Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Document
 
+**Team**
+
+- Ethan He (eth69@pitt.edu)
+- Pengyao Li (pel131@pitt.edu)
+- Li Xinyu (xil520@pitt.edu)
+
+**Instructor: Vladimir Zadorozhny**
 
 ### Introduction/Abstract
 
