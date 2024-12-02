@@ -2,11 +2,11 @@ DELIMITER $$
 
 CREATE DEFINER=`pel131`@`%`
 PROCEDURE `CreateContractAndPayment`(
-    IN p_contract_price DOUBLE,
-    IN p_first_party_id INT,
-    IN p_second_party_id INT,
+    IN p_contract_price DECIMAL(10, 2),
+    IN p_user_id INT,
     IN p_vehicle_id INT,
-    IN p_payment_amount DOUBLE
+    IN p_payment_amount DECIMAL(10, 2),
+    IN p_payment_method_id INT
 )
 BEGIN
     -- Declare variables for storing the IDs of the newly inserted contract and payment
@@ -24,23 +24,18 @@ BEGIN
     START TRANSACTION;
 
     -- Insert a new contract record into the Contract table
-    INSERT INTO Contract (signing_date, contract_price, fk_first_party, fk_second_party, fk_vehicle_id)
-    VALUES (CURRENT_DATE(), p_contract_price, p_first_party_id, p_second_party_id, p_vehicle_id);
+    INSERT INTO Contract (signing_date, contract_price, user_id, vehicle_id)
+    VALUES (CURRENT_DATE(), p_contract_price, p_user_id, p_vehicle_id);
 
     -- Retrieve the ID of the newly inserted contract record
     SET v_contract_id = LAST_INSERT_ID();
 
     -- Insert a new payment record into the Payment table
-    INSERT INTO Payment (payment_date, amount)
-    VALUES (CURRENT_DATE(), p_payment_amount);
+    INSERT INTO Payment (contract_id, payment_method_id, amount, payment_date)
+    VALUES (v_contract_id, p_payment_method_id, p_payment_amount, CURRENT_DATE());
 
-    -- Retrieve the ID of the newly inserted payment record
-    SET v_payment_id = LAST_INSERT_ID();
-
-    -- Link the contract and payment records in the PaymentOfContract table
-    INSERT INTO PaymentOfContract (fk_payment_id, fk_contract_id)
-    VALUES (v_payment_id, v_contract_id);
-
-    -- Attempt to commit the transaction
+    -- Commit the transaction
     COMMIT;
-END
+END$$
+
+DELIMITER ;
