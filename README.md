@@ -47,15 +47,18 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 
 ### Front-end Design
 - The "form" element is used to connect the front-end to the back-end, specifying the destination path and method via action and method.
+![Image Description](images/code/form.png)
 
 ### Front-end and Back-end Interactions
 
 #### Basic elements:
 #### Flask backend logic routing
 - Flask's @app.route defines the backend logic that receives, processes, and returns request results.
+![Image Description](images/code/route.png)
 
 #### Template engine (Jinja2):
 - Flask's render_template dynamically renders HTML pages, passing in variables such as error_message.
+![Image Description](images/code/render.png)
 
 #### Flask redirect function
 - Use Flask's redirect function to realize the page jump.
@@ -84,7 +87,7 @@ If username or password validation fails, the backend will re-render the login p
 
 ### Demo
 - Login page:
-![Image Description](images/demo_1.png)
+![Image Description](images/web_pages/login.png)
 
 
 
