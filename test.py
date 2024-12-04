@@ -87,6 +87,97 @@ def user():
     elif request.method == 'POST':
         return render_template('User.html')
 
+#Buyer Dashboard
+@app.route('/dashboard_buyer', methods=['GET', 'POST'])
+def buyer_dashboard():
+    if not session.get('logged_in'):
+        flash('Please log in to access the dashboard', 'error')
+        return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        try:
+            # Fetch states from API
+            states_response = check_state_api()  # Update this to match your actual API method
+            states = states_response.json if hasattr(states_response, 'json') else []
+
+            html_data_state = '<label for="state">State:</label><select id="state" name="state" required>'
+            html_data_state += '<option value="">Select State</option>'
+            for state in states:
+                state_name = state.get('state_name', '')
+                html_data_state += f'<option value="{state_name}">{state_name}</option>'
+            html_data_state += '</select>'
+
+            return render_template('dashboard_buyer.html', html_data_state=html_data_state)
+
+        except Exception as e:
+            print(f"Error fetching states: {e}")
+            flash('Unable to load states. Please try again later.', 'error')
+            return render_template('dashboard_buyer.html')
+
+    elif request.method == 'POST':
+        action = request.form.get('action')
+
+        try:
+            if action == 'get_cities':
+                selected_state = request.form.get('state')
+                if selected_state:
+                    cities_response = check_city_api(selected_state)  # Update to match your actual API method
+                    cities = cities_response.json if hasattr(cities_response, 'json') else []
+
+                    html_data_city = '<label for="city">City:</label><select id="city" name="city" required>'
+                    html_data_city += '<option value="">Select City</option>'
+                    for city in cities:
+                        city_name = city.get('city_name', '')
+                        html_data_city += f'<option value="{city_name}">{city_name}</option>'
+                    html_data_city += '</select>'
+                    return jsonify({'success': True, 'html_data_city': html_data_city})
+
+            elif action == 'schedule_appointment':
+                vehicle_id = request.form.get('vehicle_id')
+                appointment_date = request.form.get('appointment_date')
+                username = session.get('username')  # Use username instead of user_id
+
+                if vehicle_id and appointment_date and username:
+                    appointment_response = check_appointment_api(
+                        username=username,
+                        vehicle_id=vehicle_id,
+                        appointment_date=appointment_date
+                    )  # Update to match your actual API method
+
+                    if appointment_response.json.get('success'):
+                        return jsonify({'success': True, 'message': 'Appointment scheduled successfully!'})
+                    else:
+                        return jsonify({'success': False, 'message': 'Failed to schedule appointment.'})
+                else:
+                    return jsonify({'success': False, 'message': 'Incomplete form data.'})
+
+            return jsonify({'success': False, 'message': 'Invalid action.'})
+
+        except Exception as e:
+            print(f"Error processing request: {e}")
+            return jsonify({'success': False, 'message': 'An error occurred. Please try again.'})
+
+#Seller Dashboard        
+@app.route('/dashboard_seller', methods=['GET', 'POST'])
+def seller_dashboard():
+    if not session.get('logged_in'):
+        flash('Please log in to access the dashboard', 'error')
+        return redirect(url_for('login'))
+
+    username = session.get('username')
+    
+    if request.method == 'GET':
+        # Fetch contracts for the seller
+        contracts = get_seller_contracts_api(username).json
+        
+        # Generate HTML for contracts
+        html_data_contracts = generate_contracts_html(contracts)
+        
+        return render_template('dashboard_seller.html', html_data_contracts=html_data_contracts)
+    
+    elif request.method == 'POST':
+        # Handle vehicle publishing
+        return publish_vehicle_api(username, request.form)
 
 if __name__ == '__main__':
     app.run(debug=True)
