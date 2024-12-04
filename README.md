@@ -106,5 +106,13 @@ If username or password validation fails, the backend will re-render the login p
 ![Image Description](images/web_pages/register.png)
 
 
+### Future Improvment
+In the future, the application is planning to add a review feature. While reviews are not necessary, they allow users to see ratings that help renters or buyers make informed decisions by seeing feedback from others.
+
+Reviews can also motivate sellers to maintain high-quality listings.
+
+Currently the plan is to add a star rating system from 1 to 5 stars. This will give the end user the ability to filter listings based off rating.
+
+
 ### Additional Notes
 
