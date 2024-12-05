@@ -105,6 +105,15 @@ If username or password validation fails, the backend will re-render the login p
 - Register page:
 ![Image Description](images/web_pages/register.png)
 
+### Testing Case
+During the project, tests were run regularly using both manual curl tests to and automated test unit to checks various input scenarios.
+```
+curl -X POST http://127.0.0.1:5000/register -H "Content-Type: application/json" -d "{\"username\": \"test_user\", \"password\": \"test_password\", \"confirm_password\": \"test_password\"}"
+
+```
+![Image Description](images/code/test.png)
+
+We also implement proper error handling in our API methods to handle a wide range of errors. As well as creating a test environment to test the database query.
 
 ### Future Improvment
 In the future, the application is planning to add a review feature. While reviews are not necessary, they allow users to see ratings that help renters or buyers make informed decisions by seeing feedback from others.
@@ -113,6 +122,6 @@ Reviews can also motivate sellers to maintain high-quality listings.
 
 Currently the plan is to add a star rating system from 1 to 5 stars. This will give the end user the ability to filter listings based off rating.
 
+The overall front end will need to be revamped as this is an MVP (minimum viable product). The user interface will need to be improved as well as making the application more secure for expansion to process payment online.
 
-### Additional Notes
 
