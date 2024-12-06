@@ -3,7 +3,7 @@ from captcha import generate_captcha_image
 import io
 
 from API import (check_login_api,
-                  register_api, execute_sql_file)
+                  register_api, execute_sql_file,  execute_sql_file, get_seller_contracts_api, publish_vehicle_api, generate_contracts_html)
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "a_really_strong_and_unique_secret_key"
