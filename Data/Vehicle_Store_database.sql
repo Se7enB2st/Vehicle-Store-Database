@@ -1,3 +1,5 @@
+USE vehiclestore_database;
+
 -- Drop Tables if they already exist
 DROP TABLE IF EXISTS Review;
 DROP TABLE IF EXISTS Booking;
@@ -5,17 +7,33 @@ DROP TABLE IF EXISTS Contract;
 DROP TABLE IF EXISTS Payment;
 DROP TABLE IF EXISTS VehicleInfo;
 DROP TABLE IF EXISTS Vehicle;
+
 DROP TABLE IF EXISTS User;
+DROP TABLE IF EXISTS Password;
+DROP TABLE IF EXISTS UserUsePassword;
+
 DROP TABLE IF EXISTS PaymentMethod;
 DROP TABLE IF EXISTS Address;
 DROP TABLE IF EXISTS ZipCode;
 
 -- User Table
 CREATE TABLE User (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE, -- Ensure usernames are unique
+	user_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE -- Ensure usernames are unique
+) ENGINE=InnoDB;
+
+CREATE TABLE Password (
+    password_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     password VARCHAR(255) NOT NULL
-);
+) ENGINE=InnoDB;
+
+CREATE TABLE UserUsePassword (
+    user_id INT UNIQUE,
+    password_id INT,
+    PRIMARY KEY (user_id, password_id),
+    CONSTRAINT fk_user_id1 FOREIGN KEY (user_id) REFERENCES User(user_id),
+    CONSTRAINT fk_password_id1 FOREIGN KEY (password_id) REFERENCES Password(password_id)
+) ENGINE=InnoDB;
 
 -- Vehicle Table
 CREATE TABLE Vehicle (
