@@ -3,8 +3,10 @@ USE vehiclestore_database;
 -- Drop Tables if they already exist
 DROP TABLE IF EXISTS Review;
 DROP TABLE IF EXISTS Booking;
-DROP TABLE IF EXISTS Contract;
+
 DROP TABLE IF EXISTS Payment;
+DROP TABLE IF EXISTS Contract;
+
 DROP TABLE IF EXISTS VehicleInfo;
 DROP TABLE IF EXISTS Vehicle;
 
