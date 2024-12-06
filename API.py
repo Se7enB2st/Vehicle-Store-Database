@@ -22,6 +22,9 @@ def connect_db():
         )
         print("连接成功！")
         return connection
+    except pymysql.MySQLError as e:
+        print(f"MySQL 错误: {e}")
+        return None
     except Exception as e:
         print(f"连接失败: {e}")
         return None
@@ -114,61 +117,73 @@ def register_api(username, password, confirm_password):
             response = {'status': 'error', 'message': error_message}
             return jsonify(response)
 
-def get_state_api():
-    db = connect_db()
-    cursor = db.cursor(pymysql.cursors.DictCursor)
-    try:
-        cursor.execute("SELECT DISTINCT state FROM Address")
-        states = cursor.fetchall()
-        cursor.close()
-        db.close()
-        return jsonify(states)
-    except Exception as e:
-        print(f"Error fetching states: {e}")
-        return jsonify([])
+@app.route('/dashboard_buyer', methods=['GET', 'POST'])
+def buyer_dashboard():
+    if not session.get('logged_in'):
+        flash('Please log in to access the dashboard', 'error')
+        return redirect(url_for('login'))
 
-def get_city_api(state_name):
-    db = connect_db()
-    cursor = db.cursor(pymysql.cursors.DictCursor)
     try:
-        cursor.execute("SELECT DISTINCT city FROM Address WHERE state = %s", (state_name,))
-        cities = cursor.fetchall()
-        cursor.close()
-        db.close()
-        return jsonify(cities)
-    except Exception as e:
-        print(f"Error fetching cities for {state_name}: {e}")
-        return jsonify([])
+        if request.method == 'GET':
+            # Fetch all available vehicles from the database
+            connection = connect_db()
+            if connection:
+                with connection.cursor() as cursor:
+                    query = "SELECT * FROM vehicles WHERE status = 'available'"  # Ensure only available vehicles are shown
+                    cursor.execute(query)
+                    vehicles = cursor.fetchall()
 
-def schedule_appointment_api(username, vehicle_id, appointment_date):
-    db = connect_db()
-    cursor = db.cursor()
-    try:
-        # First, get the user_id from username
-        cursor.execute("SELECT user_id FROM User WHERE username = %s", (username,))
-        user_result = cursor.fetchone()
-        
-        if not user_result:
-            return jsonify({'success': False, 'message': 'User not found'})
-        
-        user_id = user_result[0]
-        
-        # Insert booking
-        cursor.execute("""
-            INSERT INTO Booking 
-            (user_id, vehicle_id, start_date, end_date) 
-            VALUES (%s, %s, %s, %s)
-        """, (user_id, vehicle_id, appointment_date, appointment_date))
-        
-        db.commit()
-        cursor.close()
-        db.close()
-        
-        return jsonify({'success': True, 'message': 'Booking scheduled successfully'})
-    
+                # Render the vehicles as HTML
+                html_data_vehicle = ""
+                for vehicle in vehicles:
+                    html_data_vehicle += f"""
+                        <div class="vehicle-card">
+                            <h3>{vehicle['make']} {vehicle['model']}</h3>
+                            <p>Year: {vehicle['year']}</p>
+                            <p>Price: ${vehicle['price']}</p>
+                            <p>Color: {vehicle['color']}</p>
+                            <button class="booking-button" data-vehicle-id="{vehicle['id']}">
+                                Book Now
+                            </button>
+                        </div>
+                    """
+
+                return render_template('dashboard_buyer.html', html_data_vehicle=html_data_vehicle)
+            else:
+                flash('Database connection failed', 'error')
+                return render_template('dashboard_buyer.html')
+
+        elif request.method == 'POST':
+            action = request.form.get('action')
+
+            if action == 'book_vehicle':
+                vehicle_id = request.form.get('vehicle_id')
+                booking_date = request.form.get('booking_date')
+                user_id = session.get('user_id')  # Use username from session
+
+                if vehicle_id and booking_date and user_id:
+                    connection = connect_db()
+                    if connection:
+                        with connection.cursor() as cursor:
+                            # Insert the booking into the database
+                            query = """
+                                INSERT INTO bookings (vehicle_id, user_id, booking_date)
+                                VALUES (%s, %s, %s)
+                            """
+                            cursor.execute(query, (vehicle_id, user_id, booking_date))
+                            connection.commit()
+
+                        return jsonify({'success': True, 'message': 'Booking successfully created!'})
+                    else:
+                        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+                else:
+                    return jsonify({'success': False, 'message': 'Incomplete form data.'})
+
+            return jsonify({'success': False, 'message': 'Invalid action.'})
+
     except Exception as e:
-        print(f"Error scheduling booking: {e}")
-        return jsonify({'success': False, 'message': 'Failed to schedule booking'})
+        print(f"Error processing request: {e}")
+        return jsonify({'success': False, 'message': 'An error occurred. Please try again.'})
 
 def get_seller_contracts_api(username):
     db = connect_db()
@@ -191,7 +206,7 @@ def get_seller_contracts_api(username):
         print(f"Error fetching contracts: {e}")
         return jsonify([])
 
-def publish_vehicle_api(username, form_data):
+def publish_vehicle_api(user_id, form_data):
     db = connect_db()
     cursor = db.cursor()
     try:
@@ -205,22 +220,6 @@ def publish_vehicle_api(username, form_data):
         # Insert into Vehicle table first
         cursor.execute("INSERT INTO Vehicle (user_id) VALUES (%s)", (user_id,))
         vehicle_id = cursor.lastrowid
-
-        # Insert address
-        cursor.execute("""
-            INSERT INTO ZipCode (zipcode) VALUES (%s)
-        """, (form_data.get('Zipcode', '00000'),))
-        zipcode_id = cursor.lastrowid
-
-        cursor.execute("""
-            INSERT INTO Address (street, city, state, zipcode_id) 
-            VALUES (%s, %s, %s, %s)
-        """, (
-            form_data.get('Address', ''),
-            form_data.get('City', ''),
-            form_data.get('State', ''),
-            zipcode_id
-        ))
 
         # Insert vehicle info
         cursor.execute("""

@@ -172,48 +172,63 @@
                 </div>
 
                 <script>
-                    document.getElementById('state').addEventListener('change', function() {
-                        var selectedState = this.value;
-                        var citySelect = document.getElementById('city-selection');
-                        fetch(`/dashboard_buyer`, {
-                            method: 'POST',
-                            body: new URLSearchParams({
-                                state: selectedState
-                            }),
+                    // Function to fetch and display all vehicles
+                    function fetchAndDisplayVehicles() {
+                        fetch(`/vehicle_details`, {
+                            method: 'GET',
                             headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
+                                'Content-Type': 'application/json'
                             }
                         })
                         .then(response => response.json())
                         .then(data => {
-                            citySelect.innerHTML = data.html_data_city;
-                            // // Get the newly inserted city element
-                            // var cityElement = citySelect.querySelector('#city');
-                            // Add the listener
-                            document.getElementById('city').addEventListener('change', function() {
-                                var selectedCity = this.value;
-                                var propety_details = document.getElementById('vehicle_details');
-
-                                fetch(`/vehicle_details`, {
-                                    method: 'POST',
-                                    body: new URLSearchParams({
-                                        city: selectedCity
-                                    }),
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded'
-                                    }
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    // If it succeeds, execute the fetchvehicle function.
-                                   propety_details.innerHTML = data.html_data_vehicle
-                                })
-                                .catch(error => console.error('Error:', error));
+                            const vehicleDetails = document.getElementById('vehicle_details');
+                            vehicleDetails.innerHTML = data.html_data_vehicle; // Populate the vehicle details section
+                
+                            // Attach event listeners for booking buttons
+                            document.querySelectorAll('.booking-button').forEach(button => {
+                                button.addEventListener('click', function () {
+                                    const vehicleId = this.getAttribute('data-vehicle-id');
+                                    makeBooking(vehicleId);
                                 });
+                            });
+                        })
+                        .catch(error => console.error('Error fetching vehicles:', error));
+                    }
+                
+                    // Function to make a booking
+                    function makeBooking(vehicleId) {
+                        const userName = prompt("Please enter your name:");
+                        const bookingDate = prompt("Enter booking date (YYYY-MM-DD):");
+                
+                        if (userName && bookingDate) {
+                            fetch(`/make_booking`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    vehicle_id: vehicleId,
+                                    user_name: userName,
+                                    booking_date: bookingDate
+                                })
                             })
-                            .catch(error => console.error('Error:', error));
+                            .then(response => response.json())
+                            .then(data => {
+                                alert(data.message); // Notify the user of the result
+                            })
+                            .catch(error => console.error('Error scheduling booking:', error));
+                        } else {
+                            alert("Name and date are required to schedule a booking.");
+                        }
+                    }
+                
+                    // Auto-fetch vehicles on page load
+                    document.addEventListener('DOMContentLoaded', function () {
+                        fetchAndDisplayVehicles();
                     });
                 </script>
+                
             </div>
 
         <div id="contractsPanel" class="panel">

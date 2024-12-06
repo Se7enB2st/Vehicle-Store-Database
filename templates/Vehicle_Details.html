@@ -55,7 +55,25 @@
             <p>Status: Sold</p> 
             <p><img src="https://di-sitebuilder-assets.s3.amazonaws.com/Honda/ModelLandingPage/Civic-Sedan/2022/trim-Touring.jpg" alt="Honda Civic Red"  width="400" height="235"></p>
         </div>
-        <a href="#" class="appointment-button">Schedule Appointment</a>
+        <!--
+        <div class="vehicle-details">
+            <h2>Vehicle Details</h2>
+            <p>Vehicle Detail ID: {{ vehicle.vehicle_id }}</p>
+            <p>Year Built: {{ vehicle.year }}</p>
+            <p>Make: {{ vehicle.make }}</p>
+            <p>Model: {{ vehicle.model }}</p>
+            <p>Color: {{ vehicle.color }}</p>
+            <p>Vin number: {{ vehicle.vin }}</p>
+            <p>Listing Date: {{ vehicle.listing_date }}</p>
+            <p>Listing Price: ${{ vehicle.listing_price }}</p>
+            <p>Status: {{ vehicle.status }}</p> 
+            <p><img src="{{ vehicle.image_url }}" alt="Image of {{ vehicle.make }} {{ vehicle.model }}" width="400" height="235"></p>
+        </div>
+        -->
+        <form action="/schedule_appointment" method="POST">
+            <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
+            <button type="submit" class="appointment-button">Schedule Appointment</button>
+        </form>
         <br/>
     </div>
 </body>
