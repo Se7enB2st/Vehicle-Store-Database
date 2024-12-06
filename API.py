@@ -39,7 +39,7 @@ def execute_sql_file(filename):
     db.close()  # 关闭数据库连接
     
 def check_login_api(username):
-        try:
+    try:
         db = connect_db()
         cursor = db.cursor()
 
