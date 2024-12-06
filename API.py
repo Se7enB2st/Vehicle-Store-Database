@@ -17,7 +17,8 @@ def connect_db():
             port=DB_PORT,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            cursorclass = pymysql.cursors.DictCursor
         )
         print("连接成功！")
         return connection
@@ -25,27 +26,49 @@ def connect_db():
         print(f"连接失败: {e}")
         return None
 
+def execute_sql_file(filename):
+    db = connect_db()  # 连接到数据库
+    cursor = db.cursor()  # 创建游标
+    with open(filename, 'r') as file:  # 打开 SQL 文件
+        sql_script = file.read()  # 读取 SQL 脚本
+        for statement in sql_script.split(';'):  # 按照分号分割 SQL 语句
+            if statement.strip():  # 如果语句不为空
+                cursor.execute(statement)  # 执行 SQL 语句
+    db.commit()  # 提交事务
+    cursor.close()  # 关闭游标
+    db.close()  # 关闭数据库连接
+    
 def check_login_api(username):
-    # Perform a database query here to verify username and password match
-    db = connect_db()
-    cursor = db.cursor()
+        try:
+        db = connect_db()
+        cursor = db.cursor()
 
-    # First query the User table for user_id
-    cursor.execute("SELECT user_id FROM User WHERE username = %s", (username,))
-    user_result = cursor.fetchone()
-    if user_result:
-        user_id = user_result[0]
+        # 合并查询
+        cursor.execute("""
+                SELECT Password.password
+                FROM User
+                JOIN UserUsePassword ON User.user_id = UserUsePassword.user_id
+                JOIN Password ON UserUsePassword.password_id = Password.password_id
+                WHERE User.username = %s
+            """, (username,))
 
-        # Then query the related table to get the password_id
-        cursor.execute("SELECT password_id FROM UserUsePassword WHERE user_id = %s", (user_id,))
         result = cursor.fetchone()
-        if result:
-            password_id = result[0]
-            # Query plaintext passwords using password_id
-            cursor.execute("SELECT password FROM Password WHERE password_id = %s", (password_id,))
-            password_result = cursor.fetchone()[0]
+        print(f"Query result for username {username}: {result}")  # 调试输出
+        password_result = result['password'] if result else None
+        print(f"Password fetched: {password_result}")  # 输出密码值
+
+    except pymysql.MySQLError as err:
+        print(f"Database error: {err}")
+        password_result = None
+
+    finally:
+        if cursor:
             cursor.close()
+        if db:
             db.close()
+
+    if password_result is None:
+        return jsonify({'error': 'Invalid username or password'}), 400
 
     return jsonify({'password': password_result})
 
