@@ -8,6 +8,17 @@ from API import (check_login_api,
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "a_really_strong_and_unique_secret_key"
 
+initialized = False  # 全局变量
+
+@app.before_request
+def initialize_db():
+    global initialized  # 使用全局变量
+    if not initialized:
+        print("Initializing the database tables...")
+        # 执行数据库初始化代码
+        execute_sql_file('Data/Vehicle_Store_database.sql')
+        initialized = True
+
 @app.route("/")
 def car_display():
     return render_template('car_display.html')
@@ -21,17 +32,25 @@ def login():
         password = request.form['password']
         captcha = request.form['captcha']
 
-
         if captcha.upper() == session.get('captcha', '').upper():
-           password_result = check_login_api(username).json['password']
-           if password_result and password_result == password:
-               session['logged_in'] = True
-               session['username'] = username  # or session['user_id'] = user_id depending on how you manage the session
-           error_message = 'Invalid username or password'
-           return render_template('login.html', error_message=error_message)
+            # 调用 check_login_api 获取响应对象
+            response = check_login_api(username)
+
+            # 获取响应对象的 JSON 数据
+            response_data = response.get_json()
+
+            if 'password' in response_data:
+                password_result = response_data['password']
+                if password_result and password_result == password:
+                    session['logged_in'] = True
+                    session['username'] = username
+                    return redirect('/')  # 登录成功后跳转
+            else:
+                error_message = 'Invalid username or password'
+                return render_template('login.html', error_message=error_message)
         else:
-           error_message = 'Invalid captcha'
-           return render_template('login.html', error_message=error_message)
+            error_message = 'Invalid captcha'
+            return render_template('login.html', error_message=error_message)
 
 @app.route("/vehicle_details/<int:car_id>")
 def vehicle_details(car_id):
