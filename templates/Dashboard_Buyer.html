@@ -233,7 +233,17 @@
     </div>
 
     <script>
+        
+    
+    
     function togglePanel(tab) {
+        // Error Handling before togglePanel
+        var panelId = tab.getAttribute('data-panel');
+        var targetPanel = document.getElementById(panelId);
+        if (!targetPanel) {
+            console.error(`Panel with ID "${panelId}" not found.`);
+            return;
+        }
         // Hide all panels
         var panels = document.querySelectorAll('.panel');
         panels.forEach(function(panel) {

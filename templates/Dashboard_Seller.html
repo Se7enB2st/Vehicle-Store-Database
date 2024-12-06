@@ -105,7 +105,7 @@
             <div class="management">
                 <h3>Publish New Vehicle</h3>
                 <!-- Post Listing Form -->
-                <form method="post" action="/publish_vehicle">
+                <form id="publishForm" method="post" action="/publish_vehicle">
                     <input type="text" name="description" placeholder="Description" required></br>
                     <input type="text" name="Make" placeholder="Make" required></br>
                     <input type="text" name="Model" placeholder="Model" required></br>
@@ -154,12 +154,15 @@ document.getElementById('publishForm').addEventListener('submit', function(event
     })
     .then(response => response.json())
     .then(data => {
-        // Display the message
+    if (data && 'success' in data && 'message' in data) {
         var messageDisplay = document.getElementById('messageDisplay');
-        messageDisplay.textContent = data.message; // Set the message text from the server response
-        messageDisplay.style.display = 'block'; // Display the message area
-        messageDisplay.className = data.success ? 'alert alert-success' : 'alert alert-danger'; // Setting styles
-    })
+        messageDisplay.textContent = data.message;
+        messageDisplay.style.display = 'block';
+        messageDisplay.className = data.success ? 'alert alert-success' : 'alert alert-danger';
+    } else {
+        console.error('Invalid response structure:', data);
+    }
+})
     .catch(error => console.error('Error:', error));
 });
 </script>
