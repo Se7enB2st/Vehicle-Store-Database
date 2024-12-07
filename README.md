@@ -187,6 +187,9 @@ If username or password validation fails, the backend will re-render the login p
 - Register page:
 ![Image Description](images/web_pages/register.png)
 
+- Book page:
+![Image Description](images/web_pages/book.png)
+
 ### Testing Case
 During the project, tests were run regularly using both manual curl tests to and automated test unit to checks various input scenarios.
 ```
