@@ -17,11 +17,7 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 
 
 ### E-R Model
-![ER diagram](https://github.com/user-attachments/assets/dc106c31-cca6-4d01-b3e8-7b0cc3bb5746)
-
-
-
-
+![ER Diagram](https://github.com/user-attachments/assets/c091c891-5717-44bf-abe4-35566eb1cd53)
 
 ### Business rules
 
