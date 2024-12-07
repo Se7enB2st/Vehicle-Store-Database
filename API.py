@@ -117,74 +117,103 @@ def register_api(username, password, confirm_password):
             response = {'status': 'error', 'message': error_message}
             return jsonify(response)
 
-@app.route('/dashboard_buyer', methods=['GET', 'POST'])
-def buyer_dashboard():
-    if not session.get('logged_in'):
-        flash('Please log in to access the dashboard', 'error')
-        return redirect(url_for('login'))
+from flask import jsonify
+import pymysql
+from db_connection import connect_db  # Ensure you have a connect_db function that connects to your DB
 
+from flask import jsonify
+import pymysql
+from db_connection import connect_db  # Ensure you have a connect_db function
+
+# Buyer Dashboard Fetch all available vehicles
+def get_available_vehicles_api():
+    db = connect_db()
+    if not db:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    cursor = db.cursor(pymysql.cursors.DictCursor)
     try:
-        if request.method == 'GET':
-            # Fetch all available vehicles from the database
-            connection = connect_db()
-            if connection:
-                with connection.cursor() as cursor:
-                    query = "SELECT * FROM vehicles WHERE status = 'available'"  # Ensure only available vehicles are shown
-                    cursor.execute(query)
-                    vehicles = cursor.fetchall()
-
-                # Render the vehicles as HTML
-                html_data_vehicle = ""
-                for vehicle in vehicles:
-                    html_data_vehicle += f"""
-                        <div class="vehicle-card">
-                            <h3>{vehicle['make']} {vehicle['model']}</h3>
-                            <p>Year: {vehicle['year']}</p>
-                            <p>Price: ${vehicle['price']}</p>
-                            <p>Color: {vehicle['color']}</p>
-                            <button class="booking-button" data-vehicle-id="{vehicle['id']}">
-                                Book Now
-                            </button>
-                        </div>
-                    """
-
-                return render_template('dashboard_buyer.html', html_data_vehicle=html_data_vehicle)
-            else:
-                flash('Database connection failed', 'error')
-                return render_template('dashboard_buyer.html')
-
-        elif request.method == 'POST':
-            action = request.form.get('action')
-
-            if action == 'book_vehicle':
-                vehicle_id = request.form.get('vehicle_id')
-                booking_date = request.form.get('booking_date')
-                user_id = session.get('user_id')  # Use username from session
-
-                if vehicle_id and booking_date and user_id:
-                    connection = connect_db()
-                    if connection:
-                        with connection.cursor() as cursor:
-                            # Insert the booking into the database
-                            query = """
-                                INSERT INTO bookings (vehicle_id, user_id, booking_date)
-                                VALUES (%s, %s, %s)
-                            """
-                            cursor.execute(query, (vehicle_id, user_id, booking_date))
-                            connection.commit()
-
-                        return jsonify({'success': True, 'message': 'Booking successfully created!'})
-                    else:
-                        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
-                else:
-                    return jsonify({'success': False, 'message': 'Incomplete form data.'})
-
-            return jsonify({'success': False, 'message': 'Invalid action.'})
-
+        # Query to fetch all vehicles with status 'available'
+        cursor.execute("SELECT * FROM Vehicle WHERE status = 'available'")
+        vehicles = cursor.fetchall()
+        cursor.close()
+        db.close()
+        return jsonify({'success': True, 'vehicles': vehicles})
     except Exception as e:
-        print(f"Error processing request: {e}")
-        return jsonify({'success': False, 'message': 'An error occurred. Please try again.'})
+        print(f"Error fetching available vehicles: {e}")
+        return jsonify({'success': False, 'message': 'Failed to fetch vehicles'})
 
+# Buyer Dashboard - Book a vehicle
+def book_vehicle_api(user_id, vehicle_id, start_date, end_date):
+    db = connect_db()
+    if not db:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    cursor = db.cursor()
+    try:
+        # Validate user existence
+        cursor.execute("SELECT user_id FROM User WHERE user_id = %s", (user_id,))
+        user_result = cursor.fetchone()
+        if not user_result:
+            return jsonify({'success': False, 'message': 'User not found'})
+
+        # Validate vehicle existence
+        cursor.execute("SELECT vehicle_id FROM Vehicle WHERE vehicle_id = %s AND status = 'available'", (vehicle_id,))
+        vehicle_result = cursor.fetchone()
+        if not vehicle_result:
+            return jsonify({'success': False, 'message': 'Vehicle not available or does not exist'})
+
+        # Check if the vehicle is already booked during the specified period
+        cursor.execute("""
+            SELECT * FROM Booking 
+            WHERE vehicle_id = %s AND 
+                  (start_date BETWEEN %s AND %s OR end_date BETWEEN %s AND %s)
+        """, (vehicle_id, start_date, end_date, start_date, end_date))
+        existing_booking = cursor.fetchone()
+
+        if existing_booking:
+            return jsonify({'success': False, 'message': 'Vehicle already booked during the selected period'})
+
+        # Insert new booking
+        cursor.execute("""
+            INSERT INTO Booking (user_id, vehicle_id, start_date, end_date) 
+            VALUES (%s, %s, %s, %s)
+        """, (user_id, vehicle_id, start_date, end_date))
+
+        # Fetch the newly created booking_id
+        booking_id = cursor.lastrowid
+        db.commit()
+        cursor.close()
+        db.close()
+
+        return jsonify({'success': True, 'message': 'Booking created successfully', 'booking_id': booking_id})
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating booking: {e}")
+        return jsonify({'success': False, 'message': 'Failed to create booking'})
+
+# Helper to fetch a single vehicle's details
+def get_vehicle_details_api(vehicle_id):
+    db = connect_db()
+    if not db:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    try:
+        # Query to fetch vehicle details by ID
+        cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id,))
+        vehicle = cursor.fetchone()
+        cursor.close()
+        db.close()
+        if vehicle:
+            return jsonify({'success': True, 'vehicle': vehicle})
+        else:
+            return jsonify({'success': False, 'message': 'Vehicle not found'})
+    except Exception as e:
+        print(f"Error fetching vehicle details: {e}")
+        return jsonify({'success': False, 'message': 'Failed to fetch vehicle details'})
+
+#Seller Dashboard
 def get_seller_contracts_api(username):
     db = connect_db()
     cursor = db.cursor(pymysql.cursors.DictCursor)

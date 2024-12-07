@@ -15,8 +15,6 @@ DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS Password;
 
 DROP TABLE IF EXISTS PaymentMethod;
-DROP TABLE IF EXISTS Address;
-DROP TABLE IF EXISTS ZipCode;
 
 -- User Table
 CREATE TABLE User (
@@ -107,20 +105,4 @@ CREATE TABLE Payment (
     payment_date DATE NOT NULL,
     FOREIGN KEY (contract_id) REFERENCES Contract(contract_id) ON DELETE CASCADE, -- Cleanup payments if contract is deleted
     FOREIGN KEY (payment_method_id) REFERENCES PaymentMethod(payment_method_id)
-);
-
--- ZipCode Table
-CREATE TABLE ZipCode (
-    zipcode_id INT AUTO_INCREMENT PRIMARY KEY,
-    zipcode VARCHAR(10) NOT NULL UNIQUE -- Ensure zip codes are unique
-);
-
--- Address Table
-CREATE TABLE Address (
-    address_id INT AUTO_INCREMENT PRIMARY KEY,
-    street VARCHAR(100) NOT NULL,
-    city VARCHAR(50) NOT NULL,
-    state VARCHAR(50) NOT NULL,
-    zipcode_id INT NOT NULL,
-    FOREIGN KEY (zipcode_id) REFERENCES ZipCode(zipcode_id) ON DELETE CASCADE -- Cleanup addresses if zipcode is deleted
 );

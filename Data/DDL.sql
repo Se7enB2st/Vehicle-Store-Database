@@ -7,8 +7,6 @@ DROP TABLE IF EXISTS Vehicle;
 DROP TABLE IF EXISTS VehicleInfo;
 DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS PaymentMethod;
-DROP TABLE IF EXISTS ZipCode;
-DROP TABLE IF EXISTS Address;
 
 -- User Table
 CREATE TABLE User (
@@ -89,18 +87,3 @@ CREATE TABLE PaymentMethod (
     method VARCHAR(50) NOT NULL
 );
 
--- ZipCode Table
-CREATE TABLE ZipCode (
-    zipcode_id INT PRIMARY KEY,
-    zipcode VARCHAR(10) NOT NULL
-);
-
--- Address Table
-CREATE TABLE Address (
-    address_id INT PRIMARY KEY,
-    street VARCHAR(100) NOT NULL,
-    city VARCHAR(50) NOT NULL,
-    state VARCHAR(50) NOT NULL,
-    zipcode_id INT NOT NULL,
-    FOREIGN KEY (zipcode_id) REFERENCES ZipCode(zipcode_id)
-);
