@@ -117,14 +117,6 @@ def register_api(username, password, confirm_password):
             response = {'status': 'error', 'message': error_message}
             return jsonify(response)
 
-from flask import jsonify
-import pymysql
-from db_connection import connect_db  # Ensure you have a connect_db function that connects to your DB
-
-from flask import jsonify
-import pymysql
-from db_connection import connect_db  # Ensure you have a connect_db function
-
 # Buyer Dashboard Fetch all available vehicles
 def get_available_vehicles_api():
     db = connect_db()
