@@ -1,36 +1,10 @@
-CREATE VIEW UserVehicleInfo AS
-SELECT 
-    u.user_id,
-    u.username,
-    v.vehicle_id,
-    vi.year AS year_made,
-    vi.make AS brand,
-    vi.model,
-    vi.color,
-    vi.listing_price,
-    vi.status
-FROM 
-    User u
-JOIN 
-    Vehicle v ON u.user_id = v.user_id
-JOIN 
-    VehicleInfo vi ON v.vehicle_id = vi.vehicle_id;
-CREATE VIEW VehicleMarketListings AS
-SELECT 
-    v.vehicle_id,
-    vi.year AS year_made,
-    vi.make AS brand,
-    vi.model,
-    vi.color,
-    vi.listing_price,
-    vi.status
-FROM 
-    Vehicle v
-JOIN 
-    VehicleInfo vi ON v.vehicle_id = vi.vehicle_id;
-DROP VIEW IF EXISTS VehicleInfo;
+SHOW TABLES LIKE 'VehicleInfo';
 
-CREATE VIEW VehicleInfo AS
+-- 删除旧视图（如果存在）
+DROP VIEW IF EXISTS DetailedVehicleInfo;
+
+-- 创建新的 VehicleInfo 替代视图
+CREATE OR REPLACE VIEW DetailedVehicleInfo AS
 SELECT 
     v.vehicle_id,
     vi.year AS year_made,
@@ -47,21 +21,54 @@ FROM
     Vehicle v
 JOIN 
     VehicleInfo vi ON v.vehicle_id = vi.vehicle_id
-JOIN 
-    Address a ON v.vehicle_id = a.address_id -- Assuming Address is linked directly to vehicles
-JOIN 
+LEFT JOIN 
+    Address a ON v.vehicle_id = a.address_id -- 假设 Address 表直接与 Vehicle 表关联
+LEFT JOIN 
     ZipCode z ON a.zipcode_id = z.zipcode_id;
-    
-    
+
+-- 创建 UserVehicleInfo 视图
+CREATE OR REPLACE VIEW UserVehicleInfo AS
+SELECT 
+    u.user_id,
+    u.username,
+    v.vehicle_id,
+    vi.year AS year_made,
+    vi.make AS brand,
+    vi.model,
+    vi.color,
+    vi.listing_price,
+    vi.status
+FROM 
+    User u
+JOIN 
+    Vehicle v ON u.user_id = v.user_id
+JOIN 
+    VehicleInfo vi ON v.vehicle_id = vi.vehicle_id;
+-- 创建 VehicleMarketListings 视图
+CREATE OR REPLACE VIEW VehicleMarketListings AS
+SELECT 
+    v.vehicle_id,
+    vi.year AS year_made,
+    vi.make AS brand,
+    vi.model,
+    vi.color,
+    vi.listing_price,
+    vi.status
+FROM 
+    Vehicle v
+JOIN 
+    VehicleInfo vi ON v.vehicle_id = vi.vehicle_id;
+
+-- 创建 VehicleColorSummary 视图
 CREATE OR REPLACE VIEW VehicleColorSummary AS
 SELECT 
     color,
     COUNT(*) AS vehicle_count,
     MIN(listing_price) AS min_price,
-    MAX(listing_price) AS max_price,
-    AVG(listing_price) AS avg_price
+    MAX(listing_price) AS max_price
 FROM VehicleInfo
 GROUP BY color;
 
-SELECT * FROM VehicleColorSummary ORDER BY avg_price DESC; -- 按平均价格排序
+-- 查询按最高价格降序排列
+SELECT * FROM VehicleColorSummary ORDER BY max_price DESC;
 
