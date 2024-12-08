@@ -26,3 +26,9 @@ CREATE INDEX idx_status_vehicleinfo ON VehicleInfo (status);
 CREATE INDEX idx_start_date_booking ON Booking (start_date);
 CREATE INDEX idx_end_date_booking ON Booking (end_date);
 CREATE INDEX idx_payment_date ON Payment (payment_date);
+
+
+-- for search
+CREATE INDEX idx_color ON VehicleInfo(color);
+CREATE INDEX idx_listing_price ON VehicleInfo(listing_price);
+

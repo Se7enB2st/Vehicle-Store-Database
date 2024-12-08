@@ -51,3 +51,17 @@ JOIN
     Address a ON v.vehicle_id = a.address_id -- Assuming Address is linked directly to vehicles
 JOIN 
     ZipCode z ON a.zipcode_id = z.zipcode_id;
+    
+    
+CREATE OR REPLACE VIEW VehicleColorSummary AS
+SELECT 
+    color,
+    COUNT(*) AS vehicle_count,
+    MIN(listing_price) AS min_price,
+    MAX(listing_price) AS max_price,
+    AVG(listing_price) AS avg_price
+FROM VehicleInfo
+GROUP BY color;
+
+SELECT * FROM VehicleColorSummary ORDER BY avg_price DESC; -- 按平均价格排序
+

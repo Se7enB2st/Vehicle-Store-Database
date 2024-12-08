@@ -1,3 +1,5 @@
+CREATE DATABASE vehiclestore_database;
+
 USE vehiclestore_database;
 
 -- Drop Tables if they already exist
@@ -106,3 +108,35 @@ CREATE TABLE Payment (
     FOREIGN KEY (contract_id) REFERENCES Contract(contract_id) ON DELETE CASCADE, -- Cleanup payments if contract is deleted
     FOREIGN KEY (payment_method_id) REFERENCES PaymentMethod(payment_method_id)
 );
+
+
+
+-- 可按数量降序排列，也可以改为 ASC 实现升序
+SELECT 
+    color, 
+    COUNT(*) AS vehicle_count
+FROM VehicleInfo
+GROUP BY color
+ORDER BY vehicle_count DESC; 
+
+
+
+-- 按颜色分类后，按价格降序排列
+SELECT 
+    color, 
+    listing_price
+FROM VehicleInfo
+ORDER BY color ASC, listing_price DESC; 
+
+
+-- 按平均价格降序排列
+SELECT 
+    color, 
+    COUNT(*) AS vehicle_count,
+    MIN(listing_price) AS min_price,
+    MAX(listing_price) AS max_price,
+    AVG(listing_price) AS avg_price
+FROM VehicleInfo
+GROUP BY color
+ORDER BY avg_price DESC; 
+
