@@ -178,6 +178,9 @@ If username or password validation fails, the backend will re-render the login p
 - vehicle display page:
 ![Image Description](images/web_pages/car_dis.png)
 
+- Vehicle search function:
+![Search Function 2](https://github.com/user-attachments/assets/ae49813e-6354-49ff-83e0-b0dbf67a6d05)
+
 - Vehicle details page:
 ![Image Description](images/web_pages/veh_detail.png)
 
@@ -205,7 +208,7 @@ In the future, the application is planning to add a review feature. While review
 
 Reviews can also motivate sellers to maintain high-quality listings.
 
-Currently the plan is to add a star rating system from 1 to 5 stars. This will give the end user the ability to filter listings based off rating.
+Currently the plan is to add a star rating system from 1 to 5 stars. This will give the end user the ability to filter listings based off rating. As of right now, users can search for vehicles based off make and model.
 
 The overall front end will need to be revamped as this is an MVP (minimum viable product). The user interface will need to be improved as well as making the application more secure for expansion to process payment online.
 
