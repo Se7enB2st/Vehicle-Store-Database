@@ -290,3 +290,13 @@ def generate_contracts_html(contracts):
         '''
     html += '</div>'
     return html
+
+# search bar
+def search_vehicles_api(query):
+    db = connect_db()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    cursor.execute("SELECT * FROM VehicleInfo WHERE make LIKE %s OR model LIKE %s OR year LIKE %s", (query, query, query))
+    vehicles = cursor.fetchall()
+    cursor.close()
+    db.close()
+    return jsonify(vehicles)

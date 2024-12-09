@@ -1,27 +1,78 @@
 from flask import Flask, render_template, request, redirect, session, jsonify, flash, url_for
 from captcha import generate_captcha_image
-import io
+import io, pymysql
+from threading import Lock
 
-from API import (check_login_api,
+from API import (connect_db,check_login_api,
                   register_api, execute_sql_file, get_seller_contracts_api, publish_vehicle_api, generate_contracts_html)
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "a_really_strong_and_unique_secret_key"
 
-initialized = False  # 全局变量
+
+db_init_lock = Lock()
+initialized = False
 
 @app.before_request
 def initialize_db():
-    global initialized  # 使用全局变量
-    if not initialized:
-        print("Initializing the database tables...")
-        # 执行数据库初始化代码
-        execute_sql_file('Data/Vehicle_Store_database.sql')
-        initialized = True
+    global initialized
+    with db_init_lock:
+        if not initialized:
+            try:
+                print("Initializing the database...")
+                execute_sql_file('Data/Vehicle_Store_database.sql')
+                initialized = True
+            except Exception as e:
+                print(f"Database initialization error: {e}")
 
 @app.route("/")
 def car_display():
     return render_template('car_display.html')
+
+@app.route('/search_vehicles')
+def search_vehicles():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'success': False, 'message': 'No search query provided'})
+
+    try:
+        db = connect_db()  # Now this should work
+        if not db:
+            return jsonify({'success': False, 'message': 'Database connection failed'})
+
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+        
+        search_query = """
+        SELECT v.vehicle_id, vi.make, vi.model, vi.year, vi.listing_price, vi.status
+        FROM Vehicle v
+        JOIN VehicleInfo vi ON v.vehicle_id = vi.vehicle_id
+        WHERE vi.make LIKE %s 
+        OR vi.model LIKE %s
+        """
+        
+        search_term = f'%{query}%'
+        cursor.execute(search_query, (search_term, search_term))
+        vehicles = cursor.fetchall()
+        
+        # Debug print
+        print(f"Search results for '{query}': {vehicles}")
+
+        return jsonify({
+            'success': True,
+            'vehicles': vehicles
+        })
+
+    except Exception as e:
+        print(f"Search error: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        })
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db' in locals():
+            db.close()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

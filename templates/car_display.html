@@ -84,7 +84,50 @@
         .car-card a:hover {
             text-decoration: underline;
         }
+
+        .search-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 20px auto;
+        text-align: center;
+        }
+
+        .search-bar {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        padding: 0 20px;
+     }
+
+        .search-bar input {
+        width: 300px;
+        padding: 8px 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        }
+
+        .search-bar input:focus {
+        outline: none;
+        border-color: #0056b3;
+        box-shadow: 0 0 5px rgba(0, 86, 179, 0.3);
+        }
+
+        .search-bar button {
+        padding: 8px 20px;
+        background-color: #0056b3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+        .search-bar button:hover {
+        background-color: #004494;
+    }
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <header style="text-align: center; padding: 5px 0; background: #0056b3; color: white; font-size: 18px;">
@@ -94,6 +137,34 @@
             <a href="{{ url_for('register') }}">Register</a>
         </div>
     </header>
+    <!-- Search Bar -->
+    <div class="search-container">
+        <div class="search-bar">
+            <input 
+                type="text" 
+                id="searchQuery" 
+                placeholder="Search cars by make or model..."
+            >
+            <button id="searchButton">Search</button>
+        </div>
+    </div>
+
+    <main class="container" id="carContainer">
+        <!-- Car cards will be dynamically updated here -->
+        {% for car in cars %}
+        <div class="car-card">
+            <a href="{{ url_for('vehicle_details', car_id=car.vehicle_id) }}">
+                <img src="{{ url_for('static', filename=car.image_path) }}" alt="{{ car.make }} {{ car.model }}">
+            </a>
+            <h3><a href="{{ url_for('vehicle_details', car_id=car.vehicle_id) }}">{{ car.make }} {{ car.model }}</a></h3>
+        </div>
+        {% endfor %}
+    </main>
+    </div>
+    
+
+
+
     <main class="container">
         <!-- Car 1 -->
         <div class="car-card">
@@ -118,8 +189,67 @@
         </div>
         <!-- Add more cars as needed -->
     </main>
+
+
+
     <footer style="position: sticky; bottom: 0; width: 100%; text-align: center; padding: 10px 0; background: #333; color: white;">
         <p>&copy; 2024 Car Showcase. All rights reserved.</p>
     </footer>
+    <!-- search bar script -->
+    <script>
+            $(document).ready(function () {
+    $('#searchButton').click(function () {
+        const query = $('#searchQuery').val().trim();
+
+        if (query) {
+            $.ajax({
+                url: '/search_vehicles',
+                type: 'GET',
+                data: { query: query },
+                success: function (response) {
+                    if (response.success) {
+                        displayResults(response.vehicles);
+                    } else {
+                        $('#carContainer').html('<p>No vehicles found.</p>');
+                    }
+                },
+                error: function () {
+                    $('#carContainer').html('<p>Error fetching search results. Please try again later.</p>');
+                }
+            });
+        } else {
+            alert('Please enter a search term.');
+        }
+    });
+
+    // Also search when Enter key is pressed
+    $('#searchQuery').keypress(function(e) {
+        if(e.which == 13) { // Enter key
+            $('#searchButton').click();
+        }
+    });
+        
+            function displayResults(vehicles) {
+                let resultsHtml = '';
+                if (vehicles && vehicles.length > 0) {
+                    vehicles.forEach(vehicle => {
+                        resultsHtml += `
+                        <div class="car-card">
+                            <h3>
+                                <a href="/vehicle_details/${vehicle.vehicle_id}">
+                                    ${vehicle.make} ${vehicle.model} (${vehicle.year})
+                                </a>
+                            </h3>
+                            <p>Price: $${vehicle.listing_price}</p>
+                            <p>Status: ${vehicle.status}</p>
+                        </div>`;
+                    });
+                } else {
+                    resultsHtml = '<p>No vehicles found matching your search.</p>';
+                }
+                $('#carContainer').html(resultsHtml);
+            }
+        });
+        </script>
 </body>
 </html>
