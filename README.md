@@ -17,7 +17,7 @@ Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Documen
 
 
 ### E-R Model
-![ER Diagram](https://github.com/user-attachments/assets/c091c891-5717-44bf-abe4-35566eb1cd53)
+![ER diagram](https://github.com/user-attachments/assets/b2fb919e-b78c-4c57-be74-4514a98c6bf3)
 
 ### Business rules
 
@@ -175,11 +175,14 @@ If the validation is successful, the backend stores the user's login status in t
 If username or password validation fails, the backend will re-render the login page via render_template with an error message indicating that the username or password entered by the user is invalid. The user can then re-fill the form according to the error message and submit again.
 
 ### Demo
-- vehicle display page:
+- Vehicle display page:
 ![Image Description](images/web_pages/car_dis.png)
 
 - Vehicle search function:
 ![Search Function 2](https://github.com/user-attachments/assets/ae49813e-6354-49ff-83e0-b0dbf67a6d05)
+
+- Data aggregation function - ability to generate search and list vehicles based off listing price
+![search aggregation](https://github.com/user-attachments/assets/1f3a00eb-54a4-4400-98b4-a681e6e6f55f)
 
 - Vehicle details page:
 ![Image Description](images/web_pages/veh_detail.png)
