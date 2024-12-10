@@ -36,30 +36,48 @@ def search_vehicles():
         return jsonify({'success': False, 'message': 'No search query provided'})
 
     try:
-        db = connect_db()  # Now this should work
+        db = connect_db()
         if not db:
             return jsonify({'success': False, 'message': 'Database connection failed'})
 
         cursor = db.cursor(pymysql.cursors.DictCursor)
         
+        # First get the vehicles
         search_query = """
-        SELECT v.vehicle_id, vi.make, vi.model, vi.year, vi.listing_price, vi.status
+        SELECT v.vehicle_id, vi.make, vi.model, vi.year, vi.color, 
+               vi.listing_price, vi.status
         FROM Vehicle v
         JOIN VehicleInfo vi ON v.vehicle_id = vi.vehicle_id
         WHERE vi.make LIKE %s 
         OR vi.model LIKE %s
+        OR vi.year LIKE %s
+        OR vi.color LIKE %s
+        """
+        
+        # Add query to get average price for the make
+        avg_price_query = """
+        SELECT vi.make, AVG(vi.listing_price) as avg_price, COUNT(*) as total_cars
+        FROM VehicleInfo vi
+        WHERE vi.make = %s
+        GROUP BY vi.make
         """
         
         search_term = f'%{query}%'
-        cursor.execute(search_query, (search_term, search_term))
+        cursor.execute(search_query, (search_term, search_term, search_term, search_term))
         vehicles = cursor.fetchall()
         
-        # Debug print
-        print(f"Search results for '{query}': {vehicles}")
+        # Get exact make from first result if it exists
+        if vehicles:
+            make = vehicles[0]['make']
+            cursor.execute(avg_price_query, (make,))
+            avg_data = cursor.fetchone()
+        else:
+            avg_data = None
 
         return jsonify({
             'success': True,
-            'vehicles': vehicles
+            'vehicles': vehicles,
+            'average_data': avg_data
         })
 
     except Exception as e:

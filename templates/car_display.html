@@ -126,6 +126,23 @@
         .search-bar button:hover {
         background-color: #004494;
     }
+        .average-price-banner {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+
+        .average-price-banner h3 {
+        margin: 0 0 10px 0;
+        color: #0056b3;
+    }
+
+        .average-price-banner p {
+        margin: 5px 0;
+        font-size: 16px;
+    }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -197,58 +214,69 @@
     </footer>
     <!-- search bar script -->
     <script>
-            $(document).ready(function () {
-    $('#searchButton').click(function () {
-        const query = $('#searchQuery').val().trim();
-
-        if (query) {
-            $.ajax({
-                url: '/search_vehicles',
-                type: 'GET',
-                data: { query: query },
-                success: function (response) {
-                    if (response.success) {
-                        displayResults(response.vehicles);
-                    } else {
-                        $('#carContainer').html('<p>No vehicles found.</p>');
-                    }
-                },
-                error: function () {
-                    $('#carContainer').html('<p>Error fetching search results. Please try again later.</p>');
+        $(document).ready(function () {
+            $('#searchButton').click(function () {
+                const query = $('#searchQuery').val().trim();
+        
+                if (query) {
+                    $.ajax({
+                        url: '/search_vehicles',
+                        type: 'GET',
+                        data: { query: query },
+                        success: function (response) {
+                            if (response.success) {
+                                displayResults(response.vehicles, response.average_data);
+                            } else {
+                                $('#carContainer').html('<p>No vehicles found.</p>');
+                            }
+                        },
+                        error: function () {
+                            $('#carContainer').html('<p>Error fetching search results. Please try again later.</p>');
+                        }
+                    });
+                } else {
+                    alert('Please enter a search term.');
                 }
             });
-        } else {
-            alert('Please enter a search term.');
-        }
-    });
-
-    // Also search when Enter key is pressed
-    $('#searchQuery').keypress(function(e) {
-        if(e.which == 13) { // Enter key
-            $('#searchButton').click();
-        }
-    });
         
-            function displayResults(vehicles) {
+            function displayResults(vehicles, avgData) {
                 let resultsHtml = '';
+                
+                // Display average price if available
+                if (avgData) {
+                    resultsHtml += `
+                        <div class="average-price-banner">
+                            <h3>${avgData.make} Statistics:</h3>
+                            <p>Average Price: $${Math.round(avgData.avg_price).toLocaleString()}</p>
+                            <p>Total Available: ${avgData.total_cars} cars</p>
+                        </div>
+                    `;
+                }
+        
+                // Display vehicles
                 if (vehicles && vehicles.length > 0) {
                     vehicles.forEach(vehicle => {
                         resultsHtml += `
-                        <div class="car-card">
-                            <h3>
-                                <a href="/vehicle_details/${vehicle.vehicle_id}">
-                                    ${vehicle.make} ${vehicle.model} (${vehicle.year})
-                                </a>
-                            </h3>
-                            <p>Price: $${vehicle.listing_price}</p>
-                            <p>Status: ${vehicle.status}</p>
-                        </div>`;
+                            <div class="car-card">
+                                <h3>${vehicle.make} ${vehicle.model} (${vehicle.year})</h3>
+                                <p>Color: ${vehicle.color}</p>
+                                <p>Price: $${vehicle.listing_price.toLocaleString()}</p>
+                                <p>Status: ${vehicle.status}</p>
+                            </div>`;
                     });
                 } else {
-                    resultsHtml = '<p>No vehicles found matching your search.</p>';
+                    resultsHtml += '<p>No vehicles found.</p>';
                 }
+                
                 $('#carContainer').html(resultsHtml);
             }
+        
+            // Search on Enter key
+            $('#searchQuery').keypress(function(e) {
+                if(e.which == 13) {
+                    $('#searchButton').click();
+                }
+            });
         });
         </script>
 </body>
