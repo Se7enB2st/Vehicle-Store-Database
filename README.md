@@ -1,6 +1,8 @@
 # Vehicle-Store-Database
 Pitt MSIS INFSCI 2710 - Database Management Systems Final Project Design Document
 
+[Github](https://github.com/Se7enB2st/Vehicle-Store-Database)
+
 **Team**
 
 - Ethan He (eth69@pitt.edu)
@@ -181,8 +183,8 @@ If username or password validation fails, the backend will re-render the login p
 - Vehicle search function:
 ![Search Function 2](https://github.com/user-attachments/assets/ae49813e-6354-49ff-83e0-b0dbf67a6d05)
 
-- Data aggregation function - ability to generate search and list vehicles based off listing price
-![search aggregation](https://github.com/user-attachments/assets/1f3a00eb-54a4-4400-98b4-a681e6e6f55f)
+- Data aggregation function - ability to generate a search and list of vehicles based off listing price and give average price and total number of vehicles that are available.
+![search aggregation](https://github.com/user-attachments/assets/44afa0d9-4b3e-4703-9f97-6f6b7552a4eb)
 
 - Vehicle details page:
 ![Image Description](images/web_pages/veh_detail.png)
