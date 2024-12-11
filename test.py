@@ -1,96 +1,28 @@
 from flask import Flask, render_template, request, redirect, session, jsonify, flash, url_for
 from captcha import generate_captcha_image
-import io, pymysql
-from threading import Lock
+import io
 
-from API import (connect_db,check_login_api,
-                  register_api, execute_sql_file, get_seller_contracts_api, publish_vehicle_api, generate_contracts_html)
+from API import (check_login_api, register_api, execute_sql_file, get_seller_contracts_api,
+                 publish_vehicle_api, generate_contracts_html, get_available_vehicles_api, book_vehicle,
+                 insert_vehicle_data, search_vehicles_api, sort_vehicles_api)
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "a_really_strong_and_unique_secret_key"
 
-
-db_init_lock = Lock()
-initialized = False
+initialized = False  # 全局变量
 
 @app.before_request
 def initialize_db():
-    global initialized
-    with db_init_lock:
-        if not initialized:
-            try:
-                print("Initializing the database...")
-                execute_sql_file('Data/Vehicle_Store_database.sql')
-                initialized = True
-            except Exception as e:
-                print(f"Database initialization error: {e}")
+    global initialized  # 使用全局变量
+    if not initialized:
+        print("Initializing the database tables...")
+        # 执行数据库初始化代码
+        execute_sql_file('Data/Vehicle_Store_database.sql')
+        initialized = True
 
-@app.route("/")
-def car_display():
+@app.route("/", methods=['GET'])
+def home():
     return render_template('car_display.html')
-
-@app.route('/search_vehicles')
-def search_vehicles():
-    query = request.args.get('query', '').strip()
-    if not query:
-        return jsonify({'success': False, 'message': 'No search query provided'})
-
-    try:
-        db = connect_db()
-        if not db:
-            return jsonify({'success': False, 'message': 'Database connection failed'})
-
-        cursor = db.cursor(pymysql.cursors.DictCursor)
-        
-        # First get the vehicles
-        search_query = """
-        SELECT v.vehicle_id, vi.make, vi.model, vi.year, vi.color, 
-               vi.listing_price, vi.status
-        FROM Vehicle v
-        JOIN VehicleInfo vi ON v.vehicle_id = vi.vehicle_id
-        WHERE vi.make LIKE %s 
-        OR vi.model LIKE %s
-        OR vi.year LIKE %s
-        OR vi.color LIKE %s
-        """
-        
-        # Add query to get average price for the make
-        avg_price_query = """
-        SELECT vi.make, AVG(vi.listing_price) as avg_price, COUNT(*) as total_cars
-        FROM VehicleInfo vi
-        WHERE vi.make = %s
-        GROUP BY vi.make
-        """
-        
-        search_term = f'%{query}%'
-        cursor.execute(search_query, (search_term, search_term, search_term, search_term))
-        vehicles = cursor.fetchall()
-        
-        # Get exact make from first result if it exists
-        if vehicles:
-            make = vehicles[0]['make']
-            cursor.execute(avg_price_query, (make,))
-            avg_data = cursor.fetchone()
-        else:
-            avg_data = None
-
-        return jsonify({
-            'success': True,
-            'vehicles': vehicles,
-            'average_data': avg_data
-        })
-
-    except Exception as e:
-        print(f"Search error: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        })
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'db' in locals():
-            db.close()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -108,14 +40,26 @@ def login():
             # 获取响应对象的 JSON 数据
             response_data = response.get_json()
 
-            if 'password' in response_data:
+            if 'password' in response_data and 'user_id' in response_data:
                 password_result = response_data['password']
+                # 从 API 数据中获取 user_id
+
                 if password_result and password_result == password:
                     session['logged_in'] = True
                     session['username'] = username
+                    session['user_id'] = response_data['user_id']  # 正确存储 user_id
+                    print(f"User logged in with ID: {response_data['user_id']}")  # 确认打印 user_id
+
+                    # 调用插入数据的 API 函数
+                    vehicle_response = insert_vehicle_data(response_data['user_id'])
+                    if vehicle_response['status'] == 'error':
+                        flash(vehicle_response['message'], 'error')
+                        return render_template('login.html', error_message=vehicle_response['message'])
+
                     return redirect('/')  # 登录成功后跳转
             else:
                 error_message = 'Invalid username or password'
+                print(f"Session Data after login: {session}")
                 return render_template('login.html', error_message=error_message)
         else:
             error_message = 'Invalid captcha'
@@ -126,9 +70,9 @@ def vehicle_details(car_id):
     # 根据 car_id 来获取车辆的详细信息（这里只是举例）
     # 这里可以从数据库中获取相关信息
     vehicle_info = {
-        1: {"make": "Honda", "model": "Civic", "year": "2025", "color": "Red", "price": "$25,999", "status": "Available"},
-        2: {"make": "Toyota", "model": "Camry", "year": "2024", "color": "Blue", "price": "$30,000", "status": "Available"},
-        3: {"make": "Ford", "model": "Mustang", "year": "2023", "color": "Black", "price": "$40,000", "status": "Sold"}
+        1: {"make": "Honda", "model": "Civic", "year": "2022", "color": "White", "price": "$25,999", "status": "Available"},
+        2: {"make": "Honda", "model": "Camry", "year": "2024", "color": "White", "price": "$30,000", "status": "Available"},
+        3: {"make": "Ford", "model": "Mustang", "year": "2023", "color": "Red", "price": "$40,000", "status": "Sold"}
     }
     # 获取对应 car_id 的车辆信息
     vehicle = vehicle_info.get(car_id)
@@ -175,96 +119,61 @@ def user():
     elif request.method == 'POST':
         return render_template('User.html')
 
+
 #Buyer Dashboard
-@app.route('/dashboard_buyer', methods=['GET', 'POST'])
-def buyer_dashboard():
-    if not session.get('logged_in'):
-        flash('Please log in to access the dashboard', 'error')
-        return redirect(url_for('login'))
-
-    try:
-        if request.method == 'GET':
-            # Fetch all available vehicles from the database
-            connection = connect_db()
-            if connection:
-                with connection.cursor() as cursor:
-                    query = "SELECT * FROM vehicles WHERE status = 'available'"  # Ensure only available vehicles are shown
-                    cursor.execute(query)
-                    vehicles = cursor.fetchall()
-
-                # Render the vehicles as HTML
-                html_data_vehicle = ""
-                for vehicle in vehicles:
-                    html_data_vehicle += f"""
-                        <div class="vehicle-card">
-                            <h3>{vehicle['make']} {vehicle['model']}</h3>
-                            <p>Year: {vehicle['year']}</p>
-                            <p>Price: ${vehicle['price']}</p>
-                            <p>Color: {vehicle['color']}</p>
-                            <button class="booking-button" data-vehicle-id="{vehicle['id']}">
-                                Book Now
-                            </button>
-                        </div>
-                    """
-
-                return render_template('dashboard_buyer.html', html_data_vehicle=html_data_vehicle)
-            else:
-                flash('Database connection failed', 'error')
-                return render_template('dashboard_buyer.html')
-
-        elif request.method == 'POST':
-            action = request.form.get('action')
-
-            if action == 'book_vehicle':
-                vehicle_id = request.form.get('vehicle_id')
-                booking_date = request.form.get('booking_date')
-                user_id = session.get('user_id')  # Use username from session
-
-                if vehicle_id and booking_date and username:
-                    connection = connect_db()
-                    if connection:
-                        with connection.cursor() as cursor:
-                            # Insert the booking into the database
-                            query = """
-                                INSERT INTO bookings (vehicle_id, user_id, booking_date)
-                                VALUES (%s, %s, %s)
-                            """
-                            cursor.execute(query, (vehicle_id, user_id, booking_date))
-                            connection.commit()
-
-                        return jsonify({'success': True, 'message': 'Booking successfully created!'})
-                    else:
-                        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
-                else:
-                    return jsonify({'success': False, 'message': 'Incomplete form data.'})
-
-            return jsonify({'success': False, 'message': 'Invalid action.'})
-
-    except Exception as e:
-        print(f"Error processing request: {e}")
-        return jsonify({'success': False, 'message': 'An error occurred. Please try again.'})
-
-#Seller Dashboard        
-@app.route('/dashboard_seller', methods=['GET', 'POST'])
-def seller_dashboard():
-    if not session.get('logged_in'):
-        flash('Please log in to access the dashboard', 'error')
-        return redirect(url_for('login'))
-
-    username = session.get('username')
-    
+@app.route('/book_vehicle', methods=['GET', 'POST'])
+def book_vehicle_page():
     if request.method == 'GET':
-        # Fetch contracts for the seller
-        contracts = get_seller_contracts_api(username).json
-        
-        # Generate HTML for contracts
-        html_data_contracts = generate_contracts_html(contracts)
-        
-        return render_template('dashboard_seller.html', html_data_contracts=html_data_contracts)
-    
+        return render_template('book_vehicle.html', success=False)  # 用于展示预定页面
     elif request.method == 'POST':
-        # Handle vehicle publishing
-        return publish_vehicle_api(username, request.form)
+        # 获取会话中的 user_id
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'status': 'error', 'message': 'User is not logged in.'})
+
+        # 获取表单数据
+        vehicle_id = request.form.get('vehicle_id')
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+
+        # 确保所有必填字段都存在
+        if not all([vehicle_id, start_date, end_date]):
+            flash('Vehicle ID, Start Date, and End Date are required!', 'error')
+            return render_template('book_vehicle.html', success=False)
+
+        # 调用 book_vehicle 函数进行预定
+        responses = book_vehicle(user_id, vehicle_id, start_date, end_date)
+
+        # 处理返回结果
+        if responses['status'] == 'success':
+            flash(responses['message'], 'success')
+            return render_template('book_success.html', success=True)
+            # return redirect('/')  # 预定成功后跳转到主页或其他页面
+        else:
+            flash(responses['message'], 'error')
+            return render_template('book_vehicle.html', error_message=responses['message'])
+
+@app.route('/search_vehicles', methods=['POST'])
+def search_vehicles():
+    data = request.get_json()  # 获取前端发送的 JSON 数据
+    query = data.get('query', '').strip()  # 获取查询参数
+
+    if not query:
+        return jsonify({'success': False, 'message': 'No search query provided'})
+    return search_vehicles_api(f"%{query}%")
+
+@app.route('/sort', methods=['POST'])
+def sort_vehicles():
+    data = request.get_json()  # 获取前端发送的 JSON 数据
+    query = data.get('query', '').strip()  # 获取查询参数
+
+    if not query:
+        return jsonify({'success': False, 'message': 'No search query provided'})
+    return sort_vehicles_api(f"%{query}%")
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
