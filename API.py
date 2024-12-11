@@ -48,7 +48,7 @@ def check_login_api(username):
 
         # 合并查询
         cursor.execute("""
-                SELECT Password.password
+                SELECT User.user_id, Password.password
                 FROM User
                 JOIN UserUsePassword ON User.user_id = UserUsePassword.user_id
                 JOIN Password ON UserUsePassword.password_id = Password.password_id
@@ -57,8 +57,18 @@ def check_login_api(username):
 
         result = cursor.fetchone()
         print(f"Query result for username {username}: {result}")  # 调试输出
-        password_result = result['password'] if result else None
-        print(f"Password fetched: {password_result}")  # 输出密码值
+
+        if result:
+            user_id = result.get('user_id')  # 使用 get 避免 KeyError
+            password_result = result.get('password')  # 使用 get 避免 KeyError
+            print(f"User ID: {user_id}, Password fetched: {password_result}")  # 输出用户ID和密码
+        else:
+            user_id = None
+            password_result = None
+            print(f"No user found for username {username}")
+
+
+
 
     except pymysql.MySQLError as err:
         print(f"Database error: {err}")
@@ -73,7 +83,7 @@ def check_login_api(username):
     if password_result is None:
         return jsonify({'error': 'Invalid username or password'}), 400
 
-    return jsonify({'password': password_result})
+    return jsonify({'user_id': user_id, 'password': password_result})
 
 def register_api(username, password, confirm_password):
     # Check if the username already exists
@@ -108,7 +118,8 @@ def register_api(username, password, confirm_password):
             db.commit()
             cursor.close()
             db.close()
-            response = {'status': 'success', 'message': 'Registration successful! You can now login.'}
+            # response = {'status': 'success', 'message': 'Registration successful! You can now login.'}
+            response = {'status': 'success', 'message': ''}
             return jsonify(response)  # Return JSON response upon success
 
         except Exception as e:
@@ -117,95 +128,9 @@ def register_api(username, password, confirm_password):
             response = {'status': 'error', 'message': error_message}
             return jsonify(response)
 
-# Buyer Dashboard Fetch all available vehicles
-def get_available_vehicles_api():
-    db = connect_db()
-    if not db:
-        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
 
-    cursor = db.cursor(pymysql.cursors.DictCursor)
-    try:
-        # Query to fetch all vehicles with status 'available'
-        cursor.execute("SELECT * FROM Vehicle WHERE status = 'available'")
-        vehicles = cursor.fetchall()
-        cursor.close()
-        db.close()
-        return jsonify({'success': True, 'vehicles': vehicles})
-    except Exception as e:
-        print(f"Error fetching available vehicles: {e}")
-        return jsonify({'success': False, 'message': 'Failed to fetch vehicles'})
 
-# Buyer Dashboard - Book a vehicle
-def book_vehicle_api(user_id, vehicle_id, start_date, end_date):
-    db = connect_db()
-    if not db:
-        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
 
-    cursor = db.cursor()
-    try:
-        # Validate user existence
-        cursor.execute("SELECT user_id FROM User WHERE user_id = %s", (user_id,))
-        user_result = cursor.fetchone()
-        if not user_result:
-            return jsonify({'success': False, 'message': 'User not found'})
-
-        # Validate vehicle existence
-        cursor.execute("SELECT vehicle_id FROM Vehicle WHERE vehicle_id = %s AND status = 'available'", (vehicle_id,))
-        vehicle_result = cursor.fetchone()
-        if not vehicle_result:
-            return jsonify({'success': False, 'message': 'Vehicle not available or does not exist'})
-
-        # Check if the vehicle is already booked during the specified period
-        cursor.execute("""
-            SELECT * FROM Booking 
-            WHERE vehicle_id = %s AND 
-                  (start_date BETWEEN %s AND %s OR end_date BETWEEN %s AND %s)
-        """, (vehicle_id, start_date, end_date, start_date, end_date))
-        existing_booking = cursor.fetchone()
-
-        if existing_booking:
-            return jsonify({'success': False, 'message': 'Vehicle already booked during the selected period'})
-
-        # Insert new booking
-        cursor.execute("""
-            INSERT INTO Booking (user_id, vehicle_id, start_date, end_date) 
-            VALUES (%s, %s, %s, %s)
-        """, (user_id, vehicle_id, start_date, end_date))
-
-        # Fetch the newly created booking_id
-        booking_id = cursor.lastrowid
-        db.commit()
-        cursor.close()
-        db.close()
-
-        return jsonify({'success': True, 'message': 'Booking created successfully', 'booking_id': booking_id})
-    except Exception as e:
-        db.rollback()
-        print(f"Error creating booking: {e}")
-        return jsonify({'success': False, 'message': 'Failed to create booking'})
-
-# Helper to fetch a single vehicle's details
-def get_vehicle_details_api(vehicle_id):
-    db = connect_db()
-    if not db:
-        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
-
-    cursor = db.cursor(pymysql.cursors.DictCursor)
-    try:
-        # Query to fetch vehicle details by ID
-        cursor.execute("SELECT * FROM vehicles WHERE id = %s", (vehicle_id,))
-        vehicle = cursor.fetchone()
-        cursor.close()
-        db.close()
-        if vehicle:
-            return jsonify({'success': True, 'vehicle': vehicle})
-        else:
-            return jsonify({'success': False, 'message': 'Vehicle not found'})
-    except Exception as e:
-        print(f"Error fetching vehicle details: {e}")
-        return jsonify({'success': False, 'message': 'Failed to fetch vehicle details'})
-
-#Seller Dashboard
 def get_seller_contracts_api(username):
     db = connect_db()
     cursor = db.cursor(pymysql.cursors.DictCursor)
@@ -291,12 +216,189 @@ def generate_contracts_html(contracts):
     html += '</div>'
     return html
 
-# search bar
-def search_vehicles_api(query):
+def get_available_vehicles_api():
+    # Connect to the database
     db = connect_db()
-    cursor = db.cursor(pymysql.cursors.DictCursor)
-    cursor.execute("SELECT * FROM VehicleInfo WHERE make LIKE %s OR model LIKE %s OR year LIKE %s", (query, query, query))
-    vehicles = cursor.fetchall()
-    cursor.close()
-    db.close()
-    return jsonify(vehicles)
+    cursor = db.cursor()
+
+    try:
+        # Query for available vehicles
+        query = "SELECT * FROM vehicles WHERE status = 'available'"
+        cursor.execute(query)
+        vehicles = cursor.fetchall()
+
+        # If no vehicles are available
+        if not vehicles:
+            response = {'status': 'error', 'message': 'No available vehicles found.'}
+            return jsonify(response)
+
+        # Format the data for JSON response
+        vehicle_list = []
+        for vehicle in vehicles:
+            vehicle_list.append({
+                'id': vehicle['id'],
+                'make': vehicle['make'],
+                'model': vehicle['model'],
+                'year': vehicle['year'],
+                'price': vehicle['price'],
+                'color': vehicle['color'],
+                'status': vehicle['status']
+            })
+
+        # Return a success response with the list of vehicles
+        response = {'status': 'success', 'vehicles': vehicle_list}
+        return jsonify(response)
+
+    except Exception as e:
+        # Handle errors and return an error response
+        error_message = "Failed to fetch available vehicles. Please try again later."
+        response = {'status': 'error', 'message': error_message, 'error_detail': str(e)}
+        return jsonify(response)
+
+    finally:
+        # Ensure the database connection is closed
+        cursor.close()
+        db.close()
+
+
+def get_booking_data(vehicle_id):
+    try:
+        connection = connect_db()
+        if connection:
+            with connection.cursor() as cursor:
+                # 查询车辆预定信息
+                query = """
+                    SELECT vehicle_id, user_id, booking_date
+                    FROM bookings
+                    WHERE vehicle_id = %s
+                """
+                cursor.execute(query, (vehicle_id,))
+                result = cursor.fetchall()
+
+                if result:
+                    return {'status': 'success', 'data': result}
+                else:
+                    return {'status': 'error', 'message': 'No bookings found for this vehicle.'}
+        else:
+            return {'status': 'error', 'message': 'Database connection failed.'}
+    except Exception as e:
+        print(f"Error fetching booking data: {e}")
+        return {'status': 'error', 'message': 'An error occurred while fetching data.'}
+
+
+def book_vehicle(user_id, vehicle_id, start_date, end_date):
+    try:
+        # 连接数据库
+        connection = connect_db()
+        if connection:
+            with connection.cursor() as cursor:
+                # 检查车辆是否存在
+                cursor.execute("SELECT vehicle_id FROM vehicle WHERE vehicle_id = %s", (vehicle_id,))
+                vehicle_exists = cursor.fetchone()
+
+                if not vehicle_exists:
+                    return {'status': 'error', 'message': f"Vehicle with ID {vehicle_id} does not exist."}
+
+                # 检查用户是否存在
+                cursor.execute("SELECT user_id FROM User WHERE user_id = %s", (user_id,))
+                user_exists = cursor.fetchone()
+
+                if not user_exists:
+                    return {'status': 'error', 'message': f"User with ID {user_id} does not exist."}
+
+                # 插入车辆预定信息
+                query = """
+                    INSERT INTO Booking (user_id, vehicle_id, start_date, end_date)
+                    VALUES (%s, %s, %s, %s)
+                """
+                cursor.execute(query, (user_id, vehicle_id, start_date, end_date))
+                connection.commit()  # 提交事务
+
+                # return {'status': 'success', 'message': 'Booking successfully created!'}
+                return {'status': 'success', 'message': ''}
+        else:
+            return {'status': 'error', 'message': 'Database connection failed.'}
+    except Exception as e:
+        print(f"Error processing booking: {e}")
+        return {'status': 'error', 'message': 'An error occurred while booking the vehicle.'}
+
+def insert_vehicle_data(user_id):
+    """
+    插入默认的 Vehicle 和 VehicleInfo 数据
+    """
+    try:
+        db = connect_db()
+        cursor = db.cursor()
+
+        # 插入 Vehicle 数据
+        cursor.execute("""
+            INSERT INTO Vehicle (vehicle_id, user_id)
+            VALUES 
+            (1, %s),
+            (2, %s),
+            (3, %s)
+        """, (user_id, user_id, user_id))
+
+        # 插入 VehicleInfo 数据
+        cursor.execute("""
+            INSERT INTO VehicleInfo (vehicle_id, year, make, model, vin, color, listing_date, listing_price, status)
+            VALUES 
+            (1, 2022, 'Honda', 'Civic', '1HGCM82633A123456', 'White', '2024-12-01', 25999.00, 'Available'),
+            (2, 2024, 'Toyota', 'Camry', '4T1BG22K8WU123456', 'White', '2024-12-02', 30000.00, 'Available'),
+            (3, 2023, 'Ford', 'Mustang', '1FAFP4041WF123456', 'Red', '2024-12-03', 40000.00, 'Sold')
+        """)
+
+        db.commit()  # 提交事务
+        cursor.close()
+        db.close()
+        return {'status': 'success', 'message': 'Vehicle data inserted successfully.'}
+    except Exception as e:
+        print(f"Error inserting vehicle data: {e}")
+        return {'status': 'error', 'message': 'Failed to insert vehicle data.'}
+
+def search_vehicles_api(query):
+    try:
+        db = connect_db()
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        # 查询语句
+        cursor.execute(
+            "SELECT * FROM VehicleInfo WHERE make LIKE %s OR model LIKE %s OR CAST(year AS CHAR) LIKE %s",
+            (query, query, query)
+        )
+
+        # 获取结果
+        vehicles = cursor.fetchall()
+
+        # 清理资源
+        cursor.close()
+        db.close()
+
+        # 返回 JSON 格式数据
+        return jsonify({'success': True, 'vehicles': vehicles})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+def sort_vehicles_api(query):
+    try:
+        db = connect_db()
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        # 查询语句
+        cursor.execute(
+            "SELECT vehicle_id, year, make, model, vin, color, listing_date, listing_price, status FROM VehicleInfo WHERE make LIKE %s OR model LIKE %s ORDER BY listing_price DESC",
+            (query, query)
+        )
+
+        # 获取结果
+        vehicles = cursor.fetchall()
+
+        # 清理资源
+        cursor.close()
+        db.close()
+
+        # 返回 JSON 格式数据
+        return jsonify({'success': True, 'vehicles': vehicles})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
