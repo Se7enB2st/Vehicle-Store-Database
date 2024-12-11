@@ -178,10 +178,10 @@ If username or password validation fails, the backend will re-render the login p
 
 ### Demo
 - Vehicle display page:
-![Image Description](images/web_pages/car_dis.png)
+![Image Description](images/web_pages/car_showcase.png)
 
 - Vehicle search function:
-![Search Function 2](https://github.com/user-attachments/assets/ae49813e-6354-49ff-83e0-b0dbf67a6d05)
+![Image Description](images/web_pages/search.png)
 
 - Data aggregation function - ability to generate a search and list of vehicles based off listing price and give average price and total number of vehicles that are available.
 ![search aggregation](https://github.com/user-attachments/assets/44afa0d9-4b3e-4703-9f97-6f6b7552a4eb)
