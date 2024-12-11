@@ -41,40 +41,36 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="vehicle-details">
-            <h2>Vehicle Details</h2>
-            <p>Vehicle Detail ID: 1</p>
-            <p>Year Built: 2025</p>
-            <p>Make: Honda</p>
-            <p>Model: Civic</p>
-            <p>Color: red</p>
-            <p>Vin number: KMHDU4AD4AU060352</p>
-            <p>Listing Date: 11/05/2024</p>
-            <p>Listing Price: $25,999</p>
-            <p>Status: Sold</p> 
-            <p><img src="https://di-sitebuilder-assets.s3.amazonaws.com/Honda/ModelLandingPage/Civic-Sedan/2022/trim-Touring.jpg" alt="Honda Civic Red"  width="400" height="235"></p>
-        </div>
-        <!--
-        <div class="vehicle-details">
-            <h2>Vehicle Details</h2>
-            <p>Vehicle Detail ID: {{ vehicle.vehicle_id }}</p>
-            <p>Year Built: {{ vehicle.year }}</p>
-            <p>Make: {{ vehicle.make }}</p>
-            <p>Model: {{ vehicle.model }}</p>
-            <p>Color: {{ vehicle.color }}</p>
-            <p>Vin number: {{ vehicle.vin }}</p>
-            <p>Listing Date: {{ vehicle.listing_date }}</p>
-            <p>Listing Price: ${{ vehicle.listing_price }}</p>
-            <p>Status: {{ vehicle.status }}</p> 
-            <p><img src="{{ vehicle.image_url }}" alt="Image of {{ vehicle.make }} {{ vehicle.model }}" width="400" height="235"></p>
-        </div>
-        -->
+
+
+            <div class="container">
+                <div class="vehicle-details">
+                   <h2>Vehicle Details</h2>
+
+                   <p>Make: {{ vehicle['make'] }}</p>
+                   <p>Model: {{ vehicle['model'] }}</p>
+                   <p>Year: {{ vehicle['year'] }}</p>
+                   <p>Color: {{ vehicle['color'] }}</p>
+                   <p>Price: {{ vehicle['price'] }}</p>
+                   <p>Status: {{ vehicle['status'] }}</p>
+
+
+             </div>
+<!--        <a href="#" class="appointment-button">Schedule Appointment</a>-->
+        <a href="{{ url_for('car_display') }}">
+          <button>Back to Car Showcase</button></a>
+        <br/>
+    </div>
+
         <form action="/schedule_appointment" method="POST">
             <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
-            <button type="submit" class="appointment-button">Schedule Appointment</button>
+            <a href="{{ url_for('book_vehicle_page') }}">
+                <button type="button" class="appointment-button">Schedule Appointment</button>
+            </a>
         </form>
         <br/>
     </div>
+
+
 </body>
 </html>
