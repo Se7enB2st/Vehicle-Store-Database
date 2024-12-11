@@ -97,7 +97,7 @@
         justify-content: center;
         gap: 10px;
         padding: 0 20px;
-     }
+        }
 
         .search-bar input {
         width: 300px;
@@ -121,28 +121,17 @@
         border-radius: 4px;
         cursor: pointer;
         font-size: 16px;
-    }
+        }
 
         .search-bar button:hover {
         background-color: #004494;
-    }
-        .average-price-banner {
-        background-color: #f8f9fa;
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 5px;
-        text-align: center;
-    }
+        }
+        .sort-container {
+        position: relative;
+        display: inline-block;
+        margin-left: 10px;
+        }
 
-        .average-price-banner h3 {
-        margin: 0 0 10px 0;
-        color: #0056b3;
-    }
-
-        .average-price-banner p {
-        margin: 5px 0;
-        font-size: 16px;
-    }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -154,15 +143,21 @@
             <a href="{{ url_for('register') }}">Register</a>
         </div>
     </header>
+
     <!-- Search Bar -->
     <div class="search-container">
         <div class="search-bar">
-            <input 
-                type="text" 
-                id="searchQuery" 
+            <input
+                type="text"
+                id="searchQuery"
                 placeholder="Search cars by make or model..."
             >
             <button id="searchButton">Search</button>
+
+            <div class="sort-container">
+            <button id="sortButton">Sort</button>
+
+        </div>
         </div>
     </div>
 
@@ -178,8 +173,6 @@
         {% endfor %}
     </main>
     </div>
-    
-
 
 
     <main class="container">
@@ -206,26 +199,25 @@
         </div>
         <!-- Add more cars as needed -->
     </main>
-
-
-
     <footer style="position: sticky; bottom: 0; width: 100%; text-align: center; padding: 10px 0; background: #333; color: white;">
         <p>&copy; 2024 Car Showcase. All rights reserved.</p>
     </footer>
+
     <!-- search bar script -->
     <script>
-        $(document).ready(function () {
-            $('#searchButton').click(function () {
-                const query = $('#searchQuery').val().trim();
-        
-                if (query) {
+    $(document).ready(function () {
+      $('#searchButton').click(function () {
+        const query = $('#searchQuery').val().trim();
+
+          if (query) {
                     $.ajax({
-                        url: '/search_vehicles',
-                        type: 'GET',
-                        data: { query: query },
+                        url: '/search_vehicles',  // 调用后端路由
+                        type: 'POST',
+                        data: JSON.stringify({ query: query }),
+                        contentType: 'application/json',
                         success: function (response) {
                             if (response.success) {
-                                displayResults(response.vehicles, response.average_data);
+                                displayResults(response.vehicles);  // 成功时显示结果
                             } else {
                                 $('#carContainer').html('<p>No vehicles found.</p>');
                             }
@@ -234,49 +226,61 @@
                             $('#carContainer').html('<p>Error fetching search results. Please try again later.</p>');
                         }
                     });
-                } else {
-                    alert('Please enter a search term.');
+          } else {
+            alert('Please enter a search term.');
+          }
+
+       });
+
+    // Also search when Enter key is pressed
+    $('#searchQuery').keypress(function(e) {
+        if(e.which == 13) { // Enter key
+            $('#searchButton').click();
+        }
+    });
+
+    $('#sortButton').click(function () {
+          const sortOrder = 'DESC';  // 你可以根据需要设置排序顺序（这里假设为升序）
+           const query = $('#searchQuery').val().trim();
+
+            $.ajax({
+                url: '/sort',
+                type: 'POST',
+                data: JSON.stringify({ query: query, sort: sortOrder }), // 增加排序参数
+                contentType: 'application/json',
+                success: function (response) {
+                    if (response.success) {
+                        displayResults(response.vehicles); // 显示排序后的结果
+                    } else {
+                        $('#carContainer').html('<p>No vehicles found.</p>');
+                    }
+                },
+                error: function () {
+                    $('#carContainer').html('<p>Error fetching sorted results. Please try again later.</p>');
                 }
             });
-        
-            function displayResults(vehicles, avgData) {
+        });
+
+            function displayResults(vehicles) {
                 let resultsHtml = '';
-                
-                // Display average price if available
-                if (avgData) {
-                    resultsHtml += `
-                        <div class="average-price-banner">
-                            <h3>${avgData.make} Statistics:</h3>
-                            <p>Average Price: $${Math.round(avgData.avg_price).toLocaleString()}</p>
-                            <p>Total Available: ${avgData.total_cars} cars</p>
-                        </div>
-                    `;
-                }
-        
-                // Display vehicles
                 if (vehicles && vehicles.length > 0) {
                     vehicles.forEach(vehicle => {
                         resultsHtml += `
-                            <div class="car-card">
-                                <h3>${vehicle.make} ${vehicle.model} (${vehicle.year})</h3>
-                                <p>Color: ${vehicle.color}</p>
-                                <p>Price: $${vehicle.listing_price.toLocaleString()}</p>
-                                <p>Status: ${vehicle.status}</p>
-                            </div>`;
+                        <div class="car-card">
+                            <h3>
+                                <a href="/vehicle_details/${vehicle.vehicle_id}">
+                                    ${vehicle.make} ${vehicle.model} (${vehicle.year})
+                                </a>
+                            </h3>
+                            <p>Price: $${vehicle.listing_price}</p>
+                            <p>Status: ${vehicle.status}</p>
+                        </div>`;
                     });
                 } else {
-                    resultsHtml += '<p>No vehicles found.</p>';
+                    resultsHtml = '<p>No vehicles found matching your search.</p>';
                 }
-                
                 $('#carContainer').html(resultsHtml);
             }
-        
-            // Search on Enter key
-            $('#searchQuery').keypress(function(e) {
-                if(e.which == 13) {
-                    $('#searchButton').click();
-                }
-            });
         });
         </script>
 </body>
